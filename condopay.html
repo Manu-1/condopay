@@ -1,0 +1,404 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Camera, CheckCircle, CreditCard, FileText, Bell, TrendingUp, ChevronRight, 
+  LayoutDashboard, Settings, ShieldCheck, User, Info, Users, Search, Check, 
+  X, AlertCircle, Eye, ArrowRightLeft, LogIn, UserPlus, Building2, Lock, 
+  Smartphone, Hash, Wallet, Download, BarChart3, PieChart, ArrowUpRight, ArrowDownRight
+} from 'lucide-react';
+
+const App = () => {
+  // Estados principales
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [role, setRole] = useState(null); // inquilino, administrador
+  const [step, setStep] = useState('auth_welcome'); 
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [selectedNotice, setSelectedNotice] = useState(null);
+
+  // Helper para entrar a la app
+  const handleAccess = (selectedRole) => {
+    if (selectedRole) setRole(selectedRole);
+    setIsLoggedIn(true);
+    setStep('dashboard');
+  };
+
+  // Datos Mock
+  const notices = [
+    { id: 1, title: 'Mantenimiento de Bombas', date: '21/04', desc: 'Se realizará limpieza de tanques de 8:00 AM a 12:00 PM. Se recomienda tomar previsiones.', icon: <Info size={16}/> },
+    { id: 2, title: 'Fumigación Áreas Verdes', date: '25/04', desc: 'Se aplicará tratamiento contra insectos en el jardín y planta baja. Favor mantener mascotas dentro.', icon: <ShieldCheck size={16}/> },
+    { id: 3, title: 'Actualización de Seguridad', date: '01/05', desc: 'Nuevos tags de acceso vehicular disponibles en la administración. El sistema viejo se desactivará pronto.', icon: <Lock size={16}/> }
+  ];
+
+  const receipts = [
+    { id: 'RC-2024-03', month: 'Marzo 2024', amount: 'Bs. 2.100,00', date: '05/03/2024' },
+    { id: 'RC-2024-02', month: 'Febrero 2024', amount: 'Bs. 1.950,00', date: '04/02/2024' },
+    { id: 'RC-2024-01', month: 'Enero 2024', amount: 'Bs. 2.050,00', date: '10/01/2024' }
+  ];
+
+  // --- VISTAS DE AUTENTICACIÓN ---
+  const AuthWelcome = () => (
+    <div className="flex flex-col h-full bg-white p-8 justify-center animate-in fade-in duration-500">
+      <div className="flex justify-center mb-8">
+        <div className="bg-blue-900 p-5 rounded-[2rem] shadow-2xl shadow-blue-200">
+          <Building2 size={60} className="text-white" />
+        </div>
+      </div>
+      <h1 className="text-3xl font-black text-slate-900 text-center mb-2 tracking-tighter italic">CondoPay VZLA</h1>
+      <p className="text-slate-500 text-center mb-12 text-sm leading-relaxed font-medium">Gestión financiera inteligente para tu comunidad.</p>
+      <div className="space-y-4">
+        <button onClick={() => { setRole('inquilino'); setStep('login'); }} className="w-full bg-blue-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-blue-100">
+          <User size={20} /> Soy Inquilino
+        </button>
+        <button onClick={() => { setRole('administrador'); setStep('login'); }} className="w-full bg-white border-2 border-slate-100 text-slate-700 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all">
+          <Users size={20} /> Soy Administrador
+        </button>
+      </div>
+    </div>
+  );
+
+  const Login = () => (
+    <div className="p-8 h-full bg-white flex flex-col animate-in slide-in-from-bottom duration-300">
+      <button onClick={() => setStep('auth_welcome')} className="mb-8 text-slate-400 font-bold text-xs uppercase tracking-widest self-start">← Volver</button>
+      <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tighter uppercase italic">Iniciar Sesión</h2>
+      <p className="text-slate-500 mb-8 text-sm">Acceso como <span className="text-blue-600 font-bold uppercase">{role}</span></p>
+      <div className="space-y-4 mb-8">
+        <input type="email" placeholder="ejemplo@correo.com" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none" />
+        <input type="password" placeholder="••••••••" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none" />
+      </div>
+      <button onClick={() => handleAccess()} className="w-full bg-blue-900 text-white py-4 rounded-2xl font-black shadow-xl mb-6 uppercase tracking-widest">Entrar</button>
+      <p className="text-center text-slate-400 text-xs">¿No tienes cuenta? <button onClick={() => setStep(role === 'inquilino' ? 'signup_tenant' : 'signup_condo')} className="text-blue-600 font-bold">Regístrate aquí</button></p>
+    </div>
+  );
+
+  const SignupCondo = () => (
+    <div className="p-8 h-full bg-white flex flex-col overflow-y-auto animate-in slide-in-from-right duration-300 no-scrollbar">
+      <button onClick={() => setStep('login')} className="mb-8 text-slate-400 font-bold text-xs uppercase tracking-widest self-start">← Volver</button>
+      <h2 className="text-2xl font-black text-slate-900 mb-1 tracking-tighter italic">REGISTRO CONDOMINIO</h2>
+      <div className="space-y-4 mb-8 mt-4">
+        <input placeholder="Nombre / Razón Social" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" />
+        <div className="grid grid-cols-2 gap-3">
+          <input placeholder="RIF (J-123...)" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" />
+          <input placeholder="Unidades" type="number" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" />
+        </div>
+        <select className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm appearance-none"><option>Tipo de Inmueble</option><option>Residencial</option><option>Centro Comercial</option></select>
+        <button onClick={() => handleAccess('administrador')} className="w-full bg-blue-900 text-white py-4 rounded-2xl font-black shadow-xl uppercase tracking-widest">Crear y Entrar</button>
+      </div>
+    </div>
+  );
+
+  const SignupTenant = () => (
+    <div className="p-8 h-full bg-white flex flex-col animate-in slide-in-from-right duration-300">
+      <button onClick={() => setStep('login')} className="mb-8 text-slate-400 font-bold text-xs uppercase tracking-widest self-start">← Volver</button>
+      <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tighter italic">HOLA VECINO</h2>
+      <div className="space-y-4 mb-8 mt-4">
+        <div className="bg-blue-50 p-4 rounded-3xl border border-blue-100 mb-2">
+          <input placeholder="CÓDIGO: PARQUE-2026" className="w-full bg-transparent border-b border-blue-200 py-1 font-bold text-blue-900 outline-none uppercase" />
+        </div>
+        <input placeholder="Nombre y Apellido" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" />
+        <input placeholder="Unidad (Ej: Apto 5-A)" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" />
+        <button onClick={() => handleAccess('inquilino')} className="w-full bg-blue-900 text-white py-4 rounded-2xl font-black shadow-xl uppercase tracking-widest">Vincularse</button>
+      </div>
+    </div>
+  );
+
+  // --- VISTAS DEL INQUILINO ---
+  const InquilinoDashboard = () => (
+    <div className="flex flex-col h-full bg-slate-50 animate-in fade-in duration-500 pb-24 overflow-y-auto no-scrollbar">
+      <div className="bg-gradient-to-br from-blue-900 to-indigo-900 p-6 text-white rounded-b-[2.5rem] shadow-xl shrink-0">
+        <div className="flex justify-between items-center mb-6 pt-2">
+          <button onClick={() => setStep('settings')} className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center border border-blue-400/30 font-bold text-sm">DM</div>
+            <div className="text-left"><p className="text-blue-200 text-[10px] uppercase tracking-wider font-semibold italic">Res. El Parque</p><h1 className="text-lg font-bold leading-tight">Deivis M.</h1></div>
+          </button>
+          <button className="bg-white/10 p-2 rounded-xl" onClick={() => setStep('settings')}><Settings size={18} /></button>
+        </div>
+        <div className="bg-white/10 p-5 rounded-3xl backdrop-blur-lg border border-white/20">
+          <div className="flex justify-between items-start mb-1"><p className="text-blue-100 text-xs font-medium">Deuda Pendiente</p><span className="bg-amber-500 text-[9px] px-2 py-0.5 rounded-full uppercase font-black italic">Abril</span></div>
+          <div className="flex justify-between items-end">
+            <div><h2 className="text-3xl font-extrabold">Bs. 2.450,00</h2><p className="text-blue-300 text-[10px] mt-1 font-medium italic underline decoration-blue-500/50">Recibo no validado</p></div>
+            <button onClick={() => setStep('report')} className="bg-emerald-500 text-white px-5 py-2.5 rounded-2xl text-xs font-black shadow-lg uppercase">Pagar ahora</button>
+          </div>
+        </div>
+      </div>
+      <div className="px-6 -mt-5 shrink-0">
+        <div className="bg-white rounded-3xl shadow-md p-4 flex justify-around border border-slate-100">
+          <div className="flex flex-col items-center">
+             <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600 mb-1"><ShieldCheck size={18} /></div>
+             <p className="text-slate-400 text-[9px] uppercase font-black tracking-widest">Fondo Reserva</p>
+             <p className="text-blue-900 font-black text-sm">$1.240</p>
+          </div>
+          <div className="w-px bg-slate-100 h-8 self-center"></div>
+          <div className="flex flex-col items-center">
+             <div className="bg-amber-50 p-2.5 rounded-xl text-amber-600 mb-1"><CreditCard size={18} /></div>
+             <p className="text-slate-400 text-[9px] uppercase font-black tracking-widest">Tasa BCV</p>
+             <p className="text-slate-800 font-black text-sm">36.45</p>
+          </div>
+        </div>
+      </div>
+      <div className="px-6 mt-6 shrink-0">
+        <h3 className="text-slate-800 font-black text-xs uppercase tracking-widest mb-3 italic ml-1">Cartelera Digital</h3>
+        <div className="space-y-3">
+          {notices.map(notice => (
+            <button key={notice.id} onClick={() => { setSelectedNotice(notice); setStep('notice_detail'); }} className="w-full bg-white border border-slate-100 p-4 rounded-[1.5rem] flex gap-4 items-center group">
+              <div className="bg-blue-50 p-3 rounded-2xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">{notice.icon}</div>
+              <div className="flex-1"><h4 className="text-slate-800 text-xs font-black uppercase">{notice.title}</h4><p className="text-slate-400 text-[10px]">{notice.date}</p></div>
+              <ChevronRight size={14} className="text-slate-300" />
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="p-6 space-y-3 mb-10"><button onClick={() => setStep('receipt_history')} className="w-full bg-white p-5 rounded-[1.5rem] shadow-sm flex items-center justify-between border border-slate-100 active:scale-95"><div className="flex items-center gap-4"><div className="bg-slate-100 p-3 rounded-2xl text-slate-600"><FileText size={20} /></div><p className="font-black text-slate-800 text-xs uppercase italic">Historial de Recibos</p></div><ChevronRight size={16} className="text-slate-300" /></button></div>
+    </div>
+  );
+
+  // --- VISTAS DEL ADMINISTRADOR ---
+  const AdminDashboard = () => (
+    <div className="flex flex-col h-full bg-slate-50 animate-in fade-in duration-500 overflow-y-auto pb-24 no-scrollbar">
+      <div className="bg-slate-900 p-6 text-white rounded-b-[2.5rem] shadow-xl shrink-0">
+        <div className="flex justify-between items-center mb-6 pt-2">
+          <button onClick={() => setStep('settings')} className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-white/10 font-black text-xs uppercase italic">AD</div><div className="text-left"><p className="text-slate-400 text-[10px] uppercase tracking-widest font-bold italic">Admin General</p><h1 className="text-lg font-black tracking-tight uppercase">Res. El Parque</h1></div></button>
+          <button onClick={() => setStep('settings')} className="bg-white/10 p-2 rounded-xl"><Settings size={18} /></button>
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="bg-white/5 border border-white/10 p-4 rounded-3xl"><p className="text-slate-500 text-[10px] uppercase font-black mb-1">Por Conciliar</p><h2 className="text-2xl font-black text-amber-400 italic">12</h2></div>
+          <div className="bg-white/5 border border-white/10 p-4 rounded-3xl"><p className="text-slate-500 text-[10px] uppercase font-black mb-1">Morosidad</p><h2 className="text-2xl font-black text-rose-500 italic">18%</h2></div>
+        </div>
+        <div className="bg-blue-600/10 p-5 rounded-3xl border border-blue-500/20">
+          <div className="flex justify-between text-[10px] font-black uppercase mb-2"><span>Recaudación Abril</span><span className="text-blue-400">82.4%</span></div>
+          <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5"><div className="h-full bg-blue-500 w-[82%] rounded-full shadow-[0_0_15px_#3b82f6]"></div></div>
+        </div>
+      </div>
+      <div className="p-6 space-y-4">
+        <h3 className="text-slate-800 font-black text-xs uppercase tracking-widest italic">Pagos por Validar</h3>
+        {[
+          { id: 1, unit: 'PH-A', name: 'Ricardo Gómez', amount: 'Bs. 4.500,00', ref: '#9982', status: 'match', date: 'Hoy' },
+          { id: 2, unit: '4-B', name: 'Deivis Montenegro', amount: 'Bs. 2.450,00', ref: '#8842', status: 'match', date: 'Hoy' },
+        ].map((item) => (
+          <div key={item.id} onClick={() => { setSelectedPayment(item); setStep('admin_detail'); }} className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-4"><div className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center font-black text-[10px] text-slate-400 italic">{item.unit}</div><div><p className="text-slate-900 font-black text-xs uppercase tracking-tight italic">{item.name}</p><p className="text-slate-500 text-[10px] font-bold">{item.amount}</p></div></div>
+            <ChevronRight size={18} className="text-slate-300" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const AdminMetrics = () => (
+    <div className="flex flex-col h-full bg-slate-50 animate-in fade-in duration-500 overflow-y-auto pb-24 no-scrollbar">
+      <div className="bg-slate-900 p-6 text-white rounded-b-[2.5rem] shadow-xl shrink-0 sticky top-0 z-20">
+        <h2 className="text-xl font-black tracking-widest uppercase italic italic">Métricas Clave</h2>
+        <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest">Resumen Financiero Real-Time</p>
+      </div>
+
+      <div className="p-6 space-y-6">
+        {/* Gráfico Ingress vs Egresos */}
+        <section className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm">
+          <h3 className="text-slate-800 font-black text-[10px] uppercase tracking-[2px] mb-4 italic underline decoration-blue-500 underline-offset-8">Salud del Flujo (Bs.)</h3>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between items-end mb-1">
+                <div className="flex items-center gap-1 text-emerald-600"><ArrowUpRight size={14}/><span className="text-[10px] font-black">INGRESOS</span></div>
+                <span className="text-xs font-black text-slate-900">Bs. 84.500</span>
+              </div>
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 w-[85%] rounded-full"></div></div>
+            </div>
+            <div>
+              <div className="flex justify-between items-end mb-1">
+                <div className="flex items-center gap-1 text-rose-600"><ArrowDownRight size={14}/><span className="text-[10px] font-black">EGRESOS</span></div>
+                <span className="text-xs font-black text-slate-900">Bs. 62.100</span>
+              </div>
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-rose-500 w-[60%] rounded-full"></div></div>
+            </div>
+          </div>
+        </section>
+
+        {/* Distribución de Gastos */}
+        <section className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm">
+          <h3 className="text-slate-800 font-black text-[10px] uppercase tracking-[2px] mb-4 italic underline decoration-blue-500 underline-offset-8">Categorías de Gasto</h3>
+          <div className="space-y-3">
+            {[
+              { label: 'Servicios (Luz/Agua)', val: '45%', color: 'bg-blue-500' },
+              { label: 'Mantenimiento Elevadores', val: '25%', color: 'bg-indigo-500' },
+              { label: 'Personal Vigilancia', val: '20%', color: 'bg-slate-800' },
+              { label: 'Otros / Insumos', val: '10%', color: 'bg-slate-300' }
+            ].map((cat, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className={`w-2 h-2 rounded-full ${cat.color}`}></div>
+                <span className="text-[10px] font-bold text-slate-600 flex-1">{cat.label}</span>
+                <span className="text-[10px] font-black text-slate-900 italic">{cat.val}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Histórico Fondo Reserva */}
+        <section className="bg-gradient-to-br from-indigo-900 to-blue-900 p-6 rounded-[2.5rem] text-white shadow-xl">
+          <div className="flex items-start justify-between mb-4">
+             <div>
+                <p className="text-[9px] font-black opacity-60 uppercase tracking-widest">Fondo de Reserva Acumulado</p>
+                <h4 className="text-2xl font-black italic">$4.820,00</h4>
+             </div>
+             <div className="bg-white/10 p-2 rounded-xl border border-white/10"><TrendingUp size={18}/></div>
+          </div>
+          <div className="flex gap-1 items-end h-16">
+            {[30, 45, 35, 55, 65, 80, 100].map((h, i) => (
+              <div key={i} style={{ height: `${h}%` }} className="flex-1 bg-white/20 rounded-t-sm hover:bg-emerald-400 transition-all cursor-pointer"></div>
+            ))}
+          </div>
+          <p className="text-[8px] text-center mt-2 opacity-50 uppercase font-black tracking-widest italic">Crecimiento últimos 7 meses</p>
+        </section>
+      </div>
+    </div>
+  );
+
+  // --- COMPONENTES AUXILIARES ---
+  const AdminDetail = () => (
+    <div className="flex flex-col h-full bg-white animate-in slide-in-from-bottom duration-300 no-scrollbar overflow-y-auto">
+      <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10 shadow-sm">
+        <button onClick={() => setStep('dashboard')} className="text-slate-500 font-black text-[10px] uppercase tracking-widest italic">Cerrar</button>
+        <span className="text-slate-900 font-black text-sm italic uppercase tracking-[2px]">Validación Detalle</span>
+        <div className="w-10"></div>
+      </div>
+      <div className="p-8 pb-32">
+        <div className="flex justify-between items-center mb-8">
+          <div><h2 className="text-3xl font-black text-slate-900 tracking-tighter italic">{selectedPayment?.unit}</h2><p className="text-blue-600 text-xs font-black uppercase tracking-tighter">{selectedPayment?.name}</p></div>
+          <div className="bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-2xl text-[10px] font-black tracking-widest italic">MATCH 100%</div>
+        </div>
+        <div className="space-y-5">
+          <div className="bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl relative overflow-hidden">
+            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-5 italic">Lectura IA del Vecino</p>
+            <div className="space-y-4">
+              <div className="flex justify-between border-b border-white/5 pb-3"><span className="text-slate-500 text-[10px] font-black uppercase">Referencia</span><span className="font-black text-sm tracking-widest text-blue-400 italic">{selectedPayment?.ref}</span></div>
+              <div className="flex justify-between pt-1"><span className="text-slate-500 text-[10px] font-black uppercase">Monto</span><span className="font-black text-sm italic uppercase">{selectedPayment?.amount}</span></div>
+            </div>
+          </div>
+          <div className="flex justify-center -my-4 relative z-20"><div className="bg-emerald-500 p-2.5 rounded-full border-[6px] border-white shadow-xl text-white"><ArrowRightLeft size={18} /></div></div>
+          <div className="bg-emerald-50 rounded-[2rem] p-6 border-2 border-emerald-100 shadow-inner">
+            <div className="flex justify-between items-center mb-5"><p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest italic">Confirmación Banco (Vía API)</p><span className="bg-emerald-200 text-emerald-700 text-[8px] font-black px-2 py-0.5 rounded uppercase">Liquidado</span></div>
+            <div className="space-y-3">
+               <div className="flex justify-between border-b border-emerald-200/40 pb-2.5"><span className="text-[10px] font-black text-emerald-900 opacity-60">Referencia</span><span className="font-black text-xs text-emerald-900 tracking-widest">{selectedPayment?.ref}</span></div>
+               <div className="flex justify-between border-b border-emerald-200/40 pb-2.5"><span className="text-[10px] font-black text-emerald-900 opacity-60">Monto Real</span><span className="font-black text-xs text-emerald-900 italic uppercase">{selectedPayment?.amount}</span></div>
+               <div className="flex justify-between border-b border-emerald-200/40 pb-2.5"><span className="text-[10px] font-black text-emerald-900 opacity-60">Banco Receptor</span><span className="font-black text-xs text-emerald-900 italic uppercase">Banesco</span></div>
+               <div className="flex justify-between pt-1"><span className="text-[10px] font-black text-emerald-900 opacity-60">Estatus</span><span className="font-black text-[10px] text-emerald-600 italic uppercase">Verificado</span></div>
+            </div>
+          </div>
+        </div>
+        <button onClick={() => setStep('dashboard')} className="w-full bg-emerald-600 text-white py-5 rounded-[2rem] font-black text-sm shadow-xl mt-10 uppercase tracking-[2px] italic">Confirmar Conciliación</button>
+      </div>
+    </div>
+  );
+
+  const ReceiptHistory = () => (
+    <div className="h-full bg-slate-50 flex flex-col animate-in slide-in-from-right duration-300">
+      <div className="p-6 bg-white border-b flex items-center gap-4 shadow-sm z-10">
+        <button onClick={() => setStep('dashboard')} className="text-slate-400 uppercase font-black text-[10px] italic tracking-widest underline decoration-2 decoration-slate-200">← Volver</button>
+        <h2 className="font-black text-xs uppercase italic tracking-[2px]">Mis Recibos</h2>
+      </div>
+      <div className="p-6 space-y-4 overflow-y-auto no-scrollbar">
+        {receipts.map(rec => (
+          <div key={rec.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between group">
+            <div className="flex items-center gap-5">
+              <div className="bg-emerald-50 text-emerald-600 p-4 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-colors shadow-inner"><FileText size={20} /></div>
+              <div><p className="font-black text-slate-800 text-sm italic uppercase tracking-tight">{rec.month}</p><p className="text-slate-400 text-[10px] font-bold">Ref: {rec.id} • {rec.date}</p></div>
+            </div>
+            <div className="text-right"><p className="font-black text-slate-900 text-xs mb-3 italic tracking-tighter uppercase">{rec.amount}</p><button className="bg-blue-900 text-white p-2.5 rounded-xl shadow-lg active:scale-90"><Download size={14} /></button></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const SettingsScreen = () => (
+    <div className="h-full bg-white flex flex-col animate-in slide-in-from-bottom duration-300 pb-20 overflow-y-auto no-scrollbar">
+      <div className="p-6 flex justify-between items-center border-b sticky top-0 bg-white/90 backdrop-blur-md z-10 shadow-sm">
+        <button onClick={() => setStep('dashboard')} className="text-slate-500 font-black text-xs italic tracking-widest uppercase">Cerrar</button>
+        <h2 className="font-black text-[11px] uppercase tracking-[3px] italic ml-4">Ajustes</h2>
+        <button onClick={() => { setIsLoggedIn(false); setStep('auth_welcome'); }} className="bg-rose-50 text-rose-500 px-3 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-tighter">Salir</button>
+      </div>
+      <div className="p-6 space-y-8">
+        <section className="space-y-5">
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[2px] ml-1 italic underline underline-offset-8">Perfil de Usuario</h3>
+          <div className="space-y-4">
+            <div className="p-5 bg-slate-50 rounded-[1.5rem] border border-slate-100 shadow-inner"><p className="text-[9px] text-slate-400 font-black uppercase mb-2">Nombre completo</p><input defaultValue="Deivis Montenegro" className="bg-transparent font-black text-slate-900 outline-none w-full text-sm italic" /></div>
+            <div className="p-5 bg-slate-50 rounded-[1.5rem] border border-slate-100 shadow-inner"><p className="text-[9px] text-slate-400 font-black uppercase mb-2 tracking-widest">Actualizar Contraseña</p><input type="password" placeholder="••••••••" className="bg-transparent font-black text-slate-900 outline-none w-full text-sm" /></div>
+          </div>
+        </section>
+        {role === 'inquilino' && (
+          <section className="space-y-5">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[2px] ml-1 italic underline underline-offset-8">Cuentas de Pago</h3>
+            <div className="bg-gradient-to-br from-slate-900 to-blue-950 text-white p-7 rounded-[2.5rem] shadow-2xl space-y-7 relative overflow-hidden">
+              <div className="flex justify-between items-start z-10 relative"><div className="bg-white/10 p-2.5 rounded-2xl border border-white/5"><Wallet size={20} /></div><span className="text-[9px] font-black tracking-[2px] opacity-40 uppercase italic">Pago Móvil Primario</span></div>
+              <div className="z-10 relative"><p className="text-[9px] opacity-40 uppercase font-black mb-1 tracking-widest">Número de Teléfono</p><p className="text-2xl font-black tracking-[2px] italic underline decoration-blue-500/50 underline-offset-4">0414-2223344</p></div>
+              <div className="flex gap-10 z-10 relative"><div><p className="text-[9px] opacity-40 uppercase font-black mb-1">Identidad</p><p className="font-black text-xs tracking-widest italic">V-12.345.678</p></div><div><p className="text-[9px] opacity-40 uppercase font-black mb-1">Banco</p><p className="font-black text-xs tracking-widest italic uppercase">Banesco</p></div></div>
+            </div>
+            <button className="w-full border-2 border-dashed border-slate-200 py-4 rounded-[1.5rem] text-slate-400 font-black text-[11px] uppercase tracking-widest hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition-all italic">+ Añadir método de pago</button>
+          </section>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-200 flex items-center justify-center p-4 font-sans antialiased overflow-hidden">
+      <style>{`
+        @keyframes scan-line { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
+        .animate-scan-line { animation: scan-line 2.5s ease-in-out infinite; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+
+      {/* Frame iPhone */}
+      <div className="w-[375px] h-[780px] bg-slate-900 rounded-[3.5rem] shadow-[0_50px_100px_-12px_rgba(0,0,0,0.5)] border-[10px] border-slate-900 relative overflow-hidden ring-4 ring-slate-800/30">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-7 bg-black rounded-full z-[100]"></div>
+        
+        <div className="h-full w-full bg-white relative">
+          {!isLoggedIn ? (
+            <div className="h-full w-full relative">
+              {step === 'auth_welcome' && <AuthWelcome />}
+              {step === 'login' && <Login />}
+              {step === 'signup_condo' && <SignupCondo />}
+              {step === 'signup_tenant' && <SignupTenant />}
+            </div>
+          ) : (
+            <div className="h-full w-full relative">
+              {step === 'dashboard' && (role === 'inquilino' ? <InquilinoDashboard /> : <AdminDashboard />)}
+              {step === 'metrics' && <AdminMetrics />}
+              {step === 'report' && <div className="p-8 h-full bg-white flex flex-col animate-in slide-in-from-right duration-300"><button onClick={() => setStep('dashboard')} className="text-blue-600 font-black mb-8 flex items-center gap-2 text-xs uppercase italic">← Volver</button><h2 className="text-2xl font-black text-slate-900 mb-1 tracking-tighter italic uppercase">REPORTAR PAGO</h2><div onClick={() => { setStep('scanning'); setTimeout(() => setStep('success'), 3000); }} className="flex-1 border-2 border-dashed border-blue-200 rounded-[3rem] flex flex-col items-center justify-center bg-blue-50/50 hover:bg-blue-100 transition-all cursor-pointer group shadow-inner"><div className="bg-blue-900 text-white p-7 rounded-full mb-5 shadow-2xl group-active:scale-90 transition-transform"><Camera size={40} strokeWidth={2.5} /></div><p className="font-black text-blue-900 text-lg uppercase tracking-tight italic">Adjuntar captura de pago</p></div></div>}
+              {step === 'scanning' && <div className="h-full flex flex-col items-center justify-center p-8 bg-blue-900 text-white text-center overflow-hidden"><div className="relative w-56 h-72 border-4 border-blue-400/40 rounded-[2rem] overflow-hidden mb-12"><div className="absolute top-0 left-0 w-full h-1.5 bg-cyan-400 shadow-[0_0_25px_#22d3ee] animate-scan-line"></div><div className="absolute inset-0 bg-blue-900/40 flex items-center justify-center backdrop-blur-[2px]"><div className="w-14 h-14 border-[5px] border-cyan-400 border-t-transparent rounded-full animate-spin"></div></div></div><h2 className="text-xl font-black mb-3 italic tracking-[4px] uppercase underline decoration-cyan-500 underline-offset-8 font-black">Procesando</h2></div>}
+              {step === 'success' && <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-white animate-in zoom-in duration-300"><div className="bg-emerald-100 text-emerald-600 p-8 rounded-full mb-8 shadow-inner"><CheckCircle size={80} strokeWidth={3} /></div><h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tighter italic uppercase">¡ENVIADO!</h2><button onClick={() => setStep('dashboard')} className="w-full bg-blue-900 text-white py-5 rounded-[2rem] font-black text-lg shadow-2xl active:scale-95 transition-all uppercase italic">Entendido</button></div>}
+              {step === 'notice_detail' && <NoticeDetail />}
+              {step === 'receipt_history' && <ReceiptHistory />}
+              {step === 'admin_detail' && <AdminDetail />}
+              {step === 'settings' && <SettingsScreen />}
+
+              {/* Bottom Nav Principal (Solo en Dashboard y Metrics) */}
+              {(step === 'dashboard' || step === 'metrics') && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[85%] bg-white/90 backdrop-blur-xl border border-slate-200 h-14 rounded-2xl shadow-2xl flex justify-around items-center px-4 z-50 animate-in slide-in-from-bottom duration-500 delay-300">
+                  <button onClick={() => setStep('dashboard')} className={`flex flex-col items-center gap-1 ${step === 'dashboard' ? (role === 'inquilino' ? 'text-blue-900' : 'text-slate-900') : 'text-slate-300'}`}>
+                    <LayoutDashboard size={18} strokeWidth={step === 'dashboard' ? 3 : 2} />
+                    <span className="text-[7px] font-black uppercase tracking-widest italic">Inicio</span>
+                  </button>
+                  
+                  {/* BOTÓN METRICAS (ADMIN) O DOCS (INQUILINO) */}
+                  <button 
+                    onClick={() => role === 'administrador' ? setStep('metrics') : setStep('receipt_history')} 
+                    className={`flex flex-col items-center gap-1 ${step === 'metrics' || step === 'receipt_history' ? (role === 'inquilino' ? 'text-blue-900' : 'text-slate-900') : 'text-slate-300'}`}
+                  >
+                    {role === 'administrador' ? <BarChart3 size={18} strokeWidth={step === 'metrics' ? 3 : 2} /> : <FileText size={18} />}
+                    <span className="text-[7px] font-black uppercase tracking-widest italic">{role === 'administrador' ? 'Métricas' : 'Docs'}</span>
+                  </button>
+
+                  <button onClick={() => setStep('settings')} className={`flex flex-col items-center gap-1 ${step === 'settings' ? 'text-blue-900' : 'text-slate-300'}`}>
+                    <User size={18} />
+                    <span className="text-[7px] font-black uppercase tracking-widest italic">Perfil</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default App;
