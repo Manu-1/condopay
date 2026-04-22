@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -34,9 +34,8 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- COMPONENTE HELPER PARA ICONOS (Reescrito para garantizar renderizado) ---
+        // --- COMPONENTE HELPER PARA ICONOS ---
         const Icon = ({ name, size = 20, className = "", strokeWidth = 2, fill = "none" }) => {
-            // Diccionario de equivalencias para mantener tu código intacto
             const nameMap = {
                 'camera': 'ph-camera', 'check-circle': 'ph-check-circle', 'credit-card': 'ph-credit-card',
                 'file-text': 'ph-file-text', 'bell': 'ph-bell', 'trending-up': 'ph-trend-up',
@@ -52,24 +51,24 @@
                 'message-square': 'ph-chat-circle', 'calendar': 'ph-calendar', 'help-circle': 'ph-question',
                 'video': 'ph-video-camera', 'list-filter': 'ph-faders', 'users2': 'ph-users-three', 
                 'map-pin': 'ph-map-pin', 'clock': 'ph-clock', 'copy': 'ph-copy', 'send': 'ph-paper-plane-right',
-                'image-icon': 'ph-image'
+                'image-icon': 'ph-image', 'megaphone': 'ph-megaphone', 'clipboard-text': 'ph-clipboard-text',
+                'currency-dollar': 'ph-currency-dollar', 'warning': 'ph-warning', 'thumbs-up': 'ph-thumbs-up',
+                'thumbs-down': 'ph-thumbs-down'
             };
 
             const mappedName = nameMap[name] || `ph-${name}`;
             const isFill = fill && fill !== "none";
             
-            // Asignamos el peso visual del icono
             let weightClass = 'ph'; 
             if (isFill) weightClass = 'ph-fill';
             else if (strokeWidth > 2) weightClass = 'ph-bold';
 
-            // Respetamos los colores pasados por la prop fill o dejamos que herede de className
             const customColor = (isFill && fill !== "currentColor") ? fill : undefined;
 
             return <i className={`${weightClass} ${mappedName} ${className}`} style={{ fontSize: size, color: customColor }}></i>;
         };
 
-        // --- COMPONENTE PRINCIPAL (100% Idéntico a la versión validada) ---
+        // --- COMPONENTE PRINCIPAL ---
         const App = () => {
             // --- ESTADOS DE NAVEGACIÓN Y SESIÓN ---
             const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -77,7 +76,7 @@
             const [step, setStep] = useState('auth_welcome'); 
             const [prevStep, setPrevStep] = useState('dashboard');
 
-            // --- ESTADOS DE DATOS ---
+            // --- ESTADOS DE DATOS INQUILINO ---
             const [points, setPoints] = useState(450);
             const [votedSurveys, setVotedSurveys] = useState({});
             const [showPointsToast, setShowPointsToast] = useState(false);
@@ -89,28 +88,41 @@
             const [selectedNotice, setSelectedNotice] = useState(null);
             const [selectedPayment, setSelectedPayment] = useState(null);
 
+            // --- ESTADOS DE DATOS ADMIN (Mock) ---
+            const [pendingPaymentsCount, setPendingPaymentsCount] = useState(3);
+            const [openTicketsCount, setOpenTicketsCount] = useState(2);
+            const [selectedAdminPayment, setSelectedAdminPayment] = useState(null);
+            const [adminNoticeForm, setAdminNoticeForm] = useState({ title: '', desc: '' });
+
             const TASA_BCV = 480.00; 
 
             // --- MOCK DATA ---
             const notices = [
                 { id: 1, title: 'Mantenimiento de Bombas', date: '21/04', desc: 'Limpieza profunda del sistema hidroneumático para asegurar el suministro.', icon: 'info', responsible: 'Plomería Total C.A.', condo: 'Junta de Condominio Res. El Parque', report: 'Limpieza preventiva anual de filtros y motores.', status: 'Programado', cost: 'Bs. 15.000' },
                 { id: 2, title: 'Fumigación Áreas Verdes', date: '25/04', desc: 'Tratamiento contra insectos en jardines y áreas comunes.', icon: 'shield-check', responsible: 'EcoPlagas', condo: 'Administración El Parque', report: 'Control de termitas y hormigas.', status: 'Pendiente', cost: 'Bs. 8.500' },
-                { id: 3, title: 'Reparación Ascensor B', date: '22/04', desc: 'Cambio de guayas y nivelación de cabina.', icon: 'arrow-up-right', responsible: 'Otis Venezuela', condo: 'Mantenimiento Central', report: 'Falla mecánica detectada en inspección.', status: 'En Proceso', cost: 'Bs. 45.000' },
-                { id: 4, title: 'Pintura Fachada', date: '30/04', desc: 'Inicio de jornada de embellecimiento exterior.', icon: 'map-pin', responsible: 'Pinturas Pro', condo: 'Res. El Parque', report: 'Mejora estética aprobada en asamblea.', status: 'Programado', cost: 'Bs. 120.000' }
+                { id: 3, title: 'Reparación Ascensor B', date: '22/04', desc: 'Cambio de guayas y nivelación de cabina.', icon: 'arrow-up-right', responsible: 'Otis Venezuela', condo: 'Mantenimiento Central', report: 'Falla mecánica detectada en inspección.', status: 'En Proceso', cost: 'Bs. 45.000' }
             ];
 
             const commonAreas = [
                 { id: 1, name: 'Piscina Olímpica', cost: 'Gratis', rules: 'Gorro obligatorio. Invitados: Max 2.', hours: '8 AM - 8 PM', img: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=500&q=80' },
-                { id: 2, name: 'Salón de Fiestas', cost: 'Bs. 4.800', rules: 'Reserva 15 días antes. Depósito requerido.', hours: '12 PM - 12 AM', img: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=500&q=80' },
-                { id: 3, name: 'Cancha de Pádel', cost: 'Bs. 960', rules: 'Máximo 1.5 horas. Calzado especial.', hours: '6 AM - 10 PM', img: 'https://images.unsplash.com/photo-1626224580194-860c36f6756f?w=500&q=80' }
+                { id: 2, name: 'Salón de Fiestas', cost: 'Bs. 4.800', rules: 'Reserva 15 días antes. Depósito requerido.', hours: '12 PM - 12 AM', img: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=500&q=80' }
             ];
 
             const [history, setHistory] = useState([
                 { id: 'PAY-8842', unit: '4-B', amount: 'Bs. 2.450,00', date: '15/04/2024', ref: '88421099', bank: 'Mercantil', status: 'Validado', category: 'Condominio' },
-                { id: 'PAY-9901', unit: '4-B', amount: 'Bs. 5.000,00', date: '10/03/2024', ref: '99013322', bank: 'Banesco', status: 'Validado', category: 'Extraordinaria' },
-                { id: 'PAY-7721', unit: '4-B', amount: 'Bs. 1.200,00', date: '05/02/2024', ref: '77215544', bank: 'Provincial', status: 'Validado', category: 'Mantenimiento' },
-                { id: 'PAY-5541', unit: '4-B', amount: 'Bs. 960,00', date: '20/01/2024', ref: '55410099', bank: 'BNC', status: 'Validado', category: 'Área Común' }
+                { id: 'PAY-9901', unit: '4-B', amount: 'Bs. 5.000,00', date: '10/03/2024', ref: '99013322', bank: 'Banesco', status: 'Validado', category: 'Extraordinaria' }
             ]);
+
+            const mockPendingPayments = [
+                { id: 'P-101', unit: '12-A', owner: 'Carlos Rivas', amount: 'Bs. 2.450,00', bank: 'Banesco', ref: '11223344', date: 'Hace 2 horas', status: 'Pendiente' },
+                { id: 'P-102', unit: 'PH-B', owner: 'María Silva', amount: 'Bs. 5.000,00', bank: 'Provincial', ref: '55667788', date: 'Hace 5 horas', status: 'Pendiente' },
+                { id: 'P-103', unit: '2-C', owner: 'Juan Pérez', amount: 'Bs. 2.450,00', bank: 'Mercantil', ref: '99887766', date: 'Ayer', status: 'Pendiente' }
+            ];
+
+            const mockTickets = [
+                { id: 'T-042', title: 'Falla iluminación pasillo 4', unit: '4-B', priority: 'Alta', status: 'Abierto', date: 'Hoy, 09:30 AM' },
+                { id: 'T-041', title: 'Ruido excesivo Apto 5-A', unit: '5-B', priority: 'Media', status: 'Abierto', date: 'Ayer, 22:15 PM' }
+            ];
 
             // --- HELPERS ---
             const navigateTo = (newStep) => {
@@ -146,7 +158,7 @@
                 return isNaN(numericValue) ? "0.00" : (numericValue / TASA_BCV).toFixed(2);
             };
 
-            // --- VISTAS SECUNDARIAS ---
+            // --- VISTAS GLOBALES ---
 
             const SuccessStep = () => (
                 <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-white animate-in zoom-in">
@@ -155,7 +167,7 @@
                 </div>
                 <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tighter uppercase italic leading-none">¡Completado!</h2>
                 <p className="text-slate-400 text-sm font-bold italic mb-10 text-center">La operación ha sido procesada exitosamente.</p>
-                <button onClick={() => navigateTo('dashboard')} className="w-full bg-blue-900 text-white py-5 rounded-[2.2rem] font-black text-lg shadow-2xl active:scale-95 transition-all uppercase italic">Entendido</button>
+                <button onClick={() => navigateTo(role === 'administrador' ? 'admin_dashboard' : 'dashboard')} className="w-full bg-blue-900 text-white py-5 rounded-[2.2rem] font-black text-lg shadow-2xl active:scale-95 transition-all uppercase italic">Entendido</button>
                 </div>
             );
 
@@ -182,9 +194,186 @@
                     <input type="text" placeholder="Usuario" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" readOnly />
                     <input type="password" placeholder="Contraseña" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" readOnly />
                 </div>
-                <button onClick={() => { setIsLoggedIn(true); navigateTo('dashboard'); }} className="w-full bg-blue-900 text-white py-4 rounded-2xl font-black shadow-xl uppercase italic">Entrar</button>
+                <button onClick={() => { 
+                    setIsLoggedIn(true); 
+                    navigateTo(role === 'administrador' ? 'admin_dashboard' : 'dashboard'); 
+                }} className="w-full bg-blue-900 text-white py-4 rounded-2xl font-black shadow-xl uppercase italic">Entrar</button>
                 </div>
             );
+
+            // --- VISTAS ADMINISTRADOR ---
+
+            const AdminDashboard = () => (
+                <div className="flex flex-col h-full bg-slate-50 pb-24 overflow-y-auto no-scrollbar">
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-6 text-white rounded-b-[3rem] shadow-xl shrink-0 pt-12">
+                    <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-3 text-left cursor-pointer">
+                        <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center border border-slate-500/30 font-bold text-sm overflow-hidden shadow-inner">
+                            <Icon name="shield-check" size={20} className="text-emerald-400" />
+                        </div>
+                        <div><p className="text-slate-300 text-[10px] uppercase font-bold italic tracking-tighter text-left leading-none mb-0.5">Admin Central</p><h1 className="text-lg font-black leading-tight text-left">Res. El Parque</h1></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => { setIsLoggedIn(false); navigateTo('auth_welcome'); }} className="relative p-2 bg-white/10 rounded-xl active:bg-white/20 transition-all"><Icon name="log-in" size={18} className="text-rose-400" /></button>
+                    </div>
+                    </div>
+
+                    <div className="bg-white/10 p-6 rounded-[2.5rem] backdrop-blur-lg border border-white/20 shadow-inner text-left">
+                        <div className="flex justify-between items-center mb-2">
+                            <p className="text-slate-300 text-[10px] font-black uppercase tracking-[2px] italic text-left">Recaudación Abril</p>
+                            <span className="bg-emerald-500/20 text-emerald-400 text-[8px] font-black px-2 py-1 rounded-full border border-emerald-500/30 uppercase tracking-widest">+12% vs mes ant.</span>
+                        </div>
+                        <div className="flex flex-col gap-5 text-left">
+                            <div className="text-left text-left">
+                                <h2 className="text-4xl font-black tracking-tighter leading-none mb-1 text-left text-left text-emerald-400">Bs. 85.450,00</h2>
+                                <p className="text-slate-300 text-xs font-black italic tracking-widest text-left text-left">≈ $ {(85450 / TASA_BCV).toFixed(2)} USD</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 mt-2">
+                                <div className="bg-white/5 p-3 rounded-2xl border border-white/10">
+                                    <p className="text-[8px] uppercase tracking-widest text-slate-400 font-bold mb-1">Por Cobrar</p>
+                                    <p className="font-black text-sm text-white">Bs. 12.000</p>
+                                </div>
+                                <div className="bg-white/5 p-3 rounded-2xl border border-white/10">
+                                    <p className="text-[8px] uppercase tracking-widest text-slate-400 font-bold mb-1">Morosidad</p>
+                                    <p className="font-black text-sm text-rose-400">8.5%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="px-6 mt-6 text-left">
+                    <h3 className="text-slate-800 font-black text-[10px] uppercase tracking-[2px] ml-1 italic underline underline-offset-8 text-left mb-4">Gestión Rápida</h3>
+                    <div className="grid grid-cols-2 gap-3 text-left">
+                        {[
+                        { id: 'admin_payments', label: 'Validar Pagos', icon: 'check-circle', color: 'bg-emerald-50 text-emerald-600', badge: pendingPaymentsCount },
+                        { id: 'admin_tickets', label: 'Incidencias', icon: 'warning', color: 'bg-rose-50 text-rose-600', badge: openTicketsCount },
+                        { id: 'admin_new_notice', label: 'Crear Aviso', icon: 'megaphone', color: 'bg-blue-50 text-blue-600' },
+                        { id: 'admin_dashboard', label: 'Reportes', icon: 'bar-chart-3', color: 'bg-slate-100 text-slate-800' }
+                        ].map(item => (
+                        <button key={item.id} onClick={() => navigateTo(item.id)} className="bg-white border border-slate-100 p-5 rounded-[2.2rem] flex flex-col items-center gap-2 active:scale-95 transition-all shadow-sm group text-center relative">
+                            {item.badge > 0 && <span className="absolute top-3 right-3 bg-rose-500 text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md">{item.badge}</span>}
+                            <div className={`${item.color} p-4 rounded-[1.5rem] group-hover:scale-110 transition-all shadow-inner flex items-center justify-center`}><Icon name={item.icon} size={20} /></div>
+                            <span className="font-black text-[9px] uppercase tracking-widest text-slate-800 text-center">{item.label}</span>
+                        </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="px-6 mt-6 text-left">
+                    <div className="flex justify-between items-center mb-3 text-left">
+                        <h3 className="text-slate-800 font-black text-xs uppercase tracking-widest italic ml-1 text-left">Últimos Avisos Creados</h3>
+                    </div>
+                    <div className="space-y-3 text-left">
+                    {notices.map(notice => (
+                        <div key={notice.id} className="w-full bg-white border border-slate-100 p-4 rounded-[1.8rem] flex gap-4 items-center shadow-sm text-left opacity-70">
+                        <div className="bg-slate-50 p-3 rounded-2xl text-slate-400 text-center"><Icon name={notice.icon} size={18} /></div>
+                        <div className="flex-1 text-left"><h4 className="text-slate-800 text-[10px] font-black uppercase italic tracking-tight leading-none mb-1 text-left text-left">{notice.title}</h4><p className="text-slate-400 text-[9px] text-left text-left">{notice.status}</p></div>
+                        <Icon name="eye" size={14} className="text-slate-300" />
+                        </div>
+                    ))}
+                    </div>
+                </div>
+                </div>
+            );
+
+            const AdminPayments = () => (
+                <div className="h-full bg-slate-50 flex flex-col animate-in slide-in-from-right">
+                <div className="p-6 bg-white border-b flex items-center justify-between pt-12 shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => navigateTo('admin_dashboard')} className="text-slate-400 uppercase font-black text-[10px] italic">← Volver</button>
+                        <h2 className="font-black text-xs uppercase italic tracking-[2px]">Validar Pagos</h2>
+                    </div>
+                    <span className="bg-emerald-100 text-emerald-600 text-[9px] font-black px-2 py-1 rounded-full uppercase italic">{pendingPaymentsCount} Pendientes</span>
+                </div>
+                <div className="p-6 space-y-4 overflow-y-auto text-left pb-24 text-left">
+                    {pendingPaymentsCount === 0 ? (
+                        <div className="text-center mt-20">
+                            <Icon name="check-circle" size={48} className="text-slate-300 mx-auto mb-4" />
+                            <p className="text-slate-500 font-bold text-sm italic">Todos los pagos están validados.</p>
+                        </div>
+                    ) : (
+                        mockPendingPayments.slice(0, pendingPaymentsCount).map(pay => (
+                        <div key={pay.id} className="bg-white p-5 rounded-[2.2rem] border border-slate-100 shadow-sm text-left">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic mb-1">Unidad {pay.unit}</p>
+                                    <h4 className="font-black text-slate-900 text-sm italic">{pay.owner}</h4>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-black text-emerald-600 text-sm italic">{pay.amount}</p>
+                                    <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-1">{pay.date}</p>
+                                </div>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-2xl mb-4 border border-slate-100 grid grid-cols-2 gap-2 text-left">
+                                <div><p className="text-[8px] text-slate-400 uppercase font-bold">Banco Origen</p><p className="text-[10px] font-black text-slate-700">{pay.bank}</p></div>
+                                <div><p className="text-[8px] text-slate-400 uppercase font-bold">Referencia</p><p className="text-[10px] font-black text-slate-700">#{pay.ref}</p></div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => { navigateTo('scanning'); setTimeout(() => { setPendingPaymentsCount(prev => prev - 1); navigateTo('success'); }, 2000); }} className="flex-1 bg-emerald-500 text-white py-3 rounded-xl font-black text-[10px] uppercase italic flex items-center justify-center gap-1 shadow-md shadow-emerald-200 active:scale-95 transition-all"><Icon name="thumbs-up" size={14}/> Aprobar</button>
+                                <button className="flex-1 bg-rose-50 text-rose-600 py-3 rounded-xl font-black text-[10px] uppercase italic flex items-center justify-center gap-1 active:scale-95 transition-all"><Icon name="thumbs-down" size={14}/> Rechazar</button>
+                            </div>
+                        </div>
+                        ))
+                    )}
+                </div>
+                </div>
+            );
+
+            const AdminTickets = () => (
+                <div className="h-full bg-slate-50 flex flex-col animate-in slide-in-from-right">
+                <div className="p-6 bg-white border-b flex items-center justify-between pt-12 shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => navigateTo('admin_dashboard')} className="text-slate-400 uppercase font-black text-[10px] italic">← Volver</button>
+                        <h2 className="font-black text-xs uppercase italic tracking-[2px]">Incidencias</h2>
+                    </div>
+                    <span className="bg-rose-100 text-rose-600 text-[9px] font-black px-2 py-1 rounded-full uppercase italic">{openTicketsCount} Abiertos</span>
+                </div>
+                <div className="p-6 space-y-4 overflow-y-auto text-left pb-24 text-left">
+                    {mockTickets.map(ticket => (
+                        <div key={ticket.id} className="bg-white p-5 rounded-[2.2rem] border border-slate-100 shadow-sm text-left">
+                            <div className="flex justify-between items-start mb-3">
+                                <div className={`px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest ${ticket.priority === 'Alta' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'}`}>Prioridad {ticket.priority}</div>
+                                <span className="text-[9px] text-slate-400 font-bold">{ticket.date}</span>
+                            </div>
+                            <h4 className="font-black text-slate-900 text-sm italic mb-1 leading-tight">{ticket.title}</h4>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic mb-4">Reportado por: Unidad {ticket.unit}</p>
+                            
+                            <div className="flex gap-2 border-t border-slate-100 pt-4">
+                                <button className="flex-1 bg-slate-900 text-white py-3 rounded-xl font-black text-[9px] uppercase italic flex items-center justify-center gap-1 shadow-md active:scale-95 transition-all"><Icon name="message-square" size={14}/> Responder</button>
+                                <button className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-black text-[9px] uppercase italic flex items-center justify-center gap-1 active:scale-95 transition-all"><Icon name="check-circle" size={14}/> Cerrar Ticket</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                </div>
+            );
+
+            const AdminNewNotice = () => (
+                <div className="h-full bg-white flex flex-col overflow-y-auto no-scrollbar pb-24 text-left text-left animate-in slide-in-from-right">
+                <div className="p-6 border-b bg-slate-50 flex items-center gap-4 pt-12 shadow-sm text-left"><button onClick={() => navigateTo('admin_dashboard')} className="text-slate-400 font-black text-[10px] uppercase italic text-left">Volver</button><h2 className="font-black text-xs uppercase italic tracking-[2px] text-left">Publicar Aviso</h2></div>
+                <div className="p-8 space-y-6 text-left text-left text-left">
+                    <div className="space-y-2 text-left text-left">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic ml-1 text-left text-left">Título del Anuncio</label>
+                        <input type="text" placeholder="Ej: Mantenimiento Ascensor..." className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm italic shadow-inner outline-none text-left text-left" />
+                    </div>
+                    <div className="space-y-2 text-left text-left">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic ml-1 text-left text-left">Detalle / Descripción</label>
+                        <textarea rows="4" placeholder="Redacta el mensaje para la comunidad..." className="w-full p-4 bg-slate-50 border border-slate-100 rounded-3xl text-sm italic shadow-inner outline-none text-left text-left"></textarea>
+                    </div>
+                    <div className="space-y-2 text-left text-left">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic ml-1 text-left text-left">Categoría</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button className="bg-blue-50 border border-blue-200 text-blue-700 py-3 rounded-xl text-[10px] font-black uppercase italic flex items-center justify-center gap-1"><Icon name="info" size={14}/> Información</button>
+                            <button className="bg-slate-50 border border-slate-200 text-slate-500 py-3 rounded-xl text-[10px] font-black uppercase italic flex items-center justify-center gap-1"><Icon name="warning" size={14}/> Urgente</button>
+                        </div>
+                    </div>
+                    <button onClick={() => { navigateTo('success'); }} className="w-full bg-slate-900 text-white py-5 rounded-[2.2rem] font-black text-sm uppercase italic tracking-[2px] shadow-xl active:scale-95 transition-all text-center text-center mt-4">Publicar a Todos</button>
+                </div>
+                </div>
+            );
+
+            // --- VISTAS INQUILINO (YA EXISTENTES) ---
 
             const InquilinoDashboard = () => (
                 <div className="flex flex-col h-full bg-slate-50 pb-24 overflow-y-auto no-scrollbar">
@@ -576,7 +765,7 @@
                 <div className="h-full bg-slate-50 flex flex-col overflow-hidden text-left text-left text-left text-left">
                     <div className="p-6 border-b bg-white flex flex-col pt-12 shadow-sm text-left text-left">
                         <div className="flex justify-between items-center mb-4 text-left text-left">
-                            <button onClick={() => navigateTo('settings')} className="text-slate-400 uppercase font-black text-[10px] italic tracking-widest text-left text-left text-left text-left">← Perfil</button>
+                            <button onClick={() => navigateTo(role === 'administrador' ? 'admin_dashboard' : 'settings')} className="text-slate-400 uppercase font-black text-[10px] italic tracking-widest text-left text-left text-left text-left">← Volver</button>
                             <h2 className="font-black text-xs uppercase italic tracking-[2px] text-center text-center">Comunidad Digital</h2>
                             <div className="w-10 text-right text-right text-right"></div>
                         </div>
@@ -613,10 +802,10 @@
 
             const NoticeDetail = () => (
                 <div className="h-full bg-white flex flex-col text-left text-left overflow-y-auto pb-10 no-scrollbar text-left text-left">
-                    <div className="p-6 border-b bg-slate-50 flex items-center gap-4 pt-12 shadow-sm text-left text-left text-left text-left"><button onClick={() => navigateTo('dashboard')} className="text-slate-500 font-black text-[10px] uppercase italic text-left text-left">Cerrar</button><h2 className="font-black text-xs uppercase italic tracking-[2px] text-left text-left">Detalle de Aviso</h2></div>
+                    <div className="p-6 border-b bg-slate-50 flex items-center gap-4 pt-12 shadow-sm text-left text-left text-left text-left"><button onClick={() => navigateTo(role === 'administrador' ? 'admin_dashboard' : 'dashboard')} className="text-slate-500 font-black text-[10px] uppercase italic text-left text-left">Cerrar</button><h2 className="font-black text-xs uppercase italic tracking-[2px] text-left text-left">Detalle de Aviso</h2></div>
                     <div className="p-8 space-y-6 text-left text-left text-left text-left">
                         <div className="bg-blue-600 text-white p-5 rounded-[2rem] w-fit mb-2 shadow-xl shadow-blue-100 text-center flex items-center justify-center text-center">
-                        <Icon name={selectedNotice?.icon} size={24} />
+                        <Icon name={selectedNotice?.icon || 'info'} size={24} />
                         </div>
                         <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tighter uppercase italic text-left leading-none text-left text-left text-left text-left">{selectedNotice?.title}</h3>
                         <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 text-left text-left text-left mb-6 text-left text-left text-left">
@@ -691,7 +880,7 @@
                         <div className="h-full text-center">{step === 'auth_welcome' ? <AuthWelcome /> : <Login />}</div>
                     ) : (
                         <div className="h-full relative text-center">
-                        {/* Vistas Dinámicas */}
+                        {/* Vistas Dinámicas Inquilino */}
                         {step === 'dashboard' && <InquilinoDashboard />}
                         {step === 'settings' && <SettingsScreen />}
                         {step === 'my_finances' && <MyFinances />}
@@ -710,12 +899,38 @@
                         {step === 'report' && <ReportPayment />}
                         {step === 'scanning' && <ScanningView />}
 
-                        {/* Barra de Navegación Persistente */}
-                        {['dashboard', 'settings', 'common_areas', 'chat_view', 'my_finances', 'payments_list', 'surveys'].includes(step) && (
+                        {/* Vistas Dinámicas Administrador */}
+                        {step === 'admin_dashboard' && <AdminDashboard />}
+                        {step === 'admin_payments' && <AdminPayments />}
+                        {step === 'admin_tickets' && <AdminTickets />}
+                        {step === 'admin_new_notice' && <AdminNewNotice />}
+
+                        {/* Barra de Navegación Persistente - Condicionada por Rol */}
+                        {['dashboard', 'settings', 'common_areas', 'chat_view', 'my_finances', 'payments_list', 'surveys', 'admin_dashboard', 'admin_payments', 'admin_tickets'].includes(step) && (
                             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[85%] bg-white/95 backdrop-blur-xl border border-slate-100 h-16 rounded-[2.5rem] shadow-2xl flex justify-around items-center px-4 z-50 animate-in slide-in-from-bottom duration-500 text-center">
-                            <button onClick={() => navigateTo('dashboard')} className={`flex flex-col items-center gap-1 ${step === 'dashboard' ? 'text-blue-900' : 'text-slate-300'} text-center`}><Icon name="layout-dashboard" size={20} /><span className="text-[7px] font-black uppercase italic text-center">Inicio</span></button>
-                            <button onClick={() => navigateTo('chat_view')} className={`flex flex-col items-center gap-1 ${step === 'chat_view' ? 'text-blue-900' : 'text-slate-300'} text-center`}><Icon name="message-square" size={20} /><span className="text-[7px] font-black uppercase italic text-center">Chat</span></button>
-                            <button onClick={() => navigateTo('settings')} className={`flex flex-col items-center gap-1 ${step === 'settings' ? 'text-blue-900' : 'text-slate-300'} text-center`}><Icon name="user" size={20} /><span className="text-[7px] font-black uppercase italic text-center">Perfil</span></button>
+                            
+                            {role === 'inquilino' ? (
+                                <>
+                                    <button onClick={() => navigateTo('dashboard')} className={`flex flex-col items-center gap-1 ${step === 'dashboard' ? 'text-blue-900' : 'text-slate-300'} text-center`}><Icon name="layout-dashboard" size={20} /><span className="text-[7px] font-black uppercase italic text-center">Inicio</span></button>
+                                    <button onClick={() => navigateTo('chat_view')} className={`flex flex-col items-center gap-1 ${step === 'chat_view' ? 'text-blue-900' : 'text-slate-300'} text-center`}><Icon name="message-square" size={20} /><span className="text-[7px] font-black uppercase italic text-center">Chat</span></button>
+                                    <button onClick={() => navigateTo('settings')} className={`flex flex-col items-center gap-1 ${step === 'settings' ? 'text-blue-900' : 'text-slate-300'} text-center`}><Icon name="user" size={20} /><span className="text-[7px] font-black uppercase italic text-center">Perfil</span></button>
+                                </>
+                            ) : (
+                                <>
+                                    <button onClick={() => navigateTo('admin_dashboard')} className={`flex flex-col items-center gap-1 ${step === 'admin_dashboard' ? 'text-slate-800' : 'text-slate-300'} text-center`}><Icon name="layout-dashboard" size={20} /><span className="text-[7px] font-black uppercase italic text-center">Panel</span></button>
+                                    <button onClick={() => navigateTo('admin_payments')} className={`flex flex-col items-center gap-1 ${step === 'admin_payments' ? 'text-slate-800' : 'text-slate-300'} text-center relative`}>
+                                        {pendingPaymentsCount > 0 && <span className="absolute -top-1 -right-1 bg-emerald-500 w-2 h-2 rounded-full"></span>}
+                                        <Icon name="check-circle" size={20} />
+                                        <span className="text-[7px] font-black uppercase italic text-center">Validar</span>
+                                    </button>
+                                    <button onClick={() => navigateTo('admin_tickets')} className={`flex flex-col items-center gap-1 ${step === 'admin_tickets' ? 'text-slate-800' : 'text-slate-300'} text-center relative`}>
+                                        {openTicketsCount > 0 && <span className="absolute -top-1 -right-1 bg-rose-500 w-2 h-2 rounded-full"></span>}
+                                        <Icon name="warning" size={20} />
+                                        <span className="text-[7px] font-black uppercase italic text-center">Tickets</span>
+                                    </button>
+                                </>
+                            )}
+                            
                             </div>
                         )}
                         </div>
