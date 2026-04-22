@@ -1,318 +1,727 @@
-<!DOCTYPE html>
+
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CondoPay VZLA - Demo Inversionista</title>
+    <title>CondoPay Pro | Prototipo Inversionistas</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel para compilar JSX en el navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Phosphor Icons (Motor de iconos ultra robusto y estético) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #e2e8f0; }
+        body { margin: 0; padding: 0; background-color: #e2e8f0; }
+        /* Animaciones Personalizadas de CondoPay */
+        @keyframes scan { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
+        .animate-scan { animation: scan 2.5s ease-in-out infinite; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes scan-line { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
-        .animate-scan-line { animation: scan-line 2.5s ease-in-out infinite; }
     </style>
 </head>
 <body>
+    <!-- Contenedor Principal de React -->
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
-        // Icon Helper for Lucide
-        const Icon = ({ name, size = 20, className = "", strokeWidth = 2 }) => {
-            useEffect(() => {
-                if (window.lucide) {
-                    window.lucide.createIcons();
-                }
-            }, [name, size, className, strokeWidth]);
-            
-            // Note: Use strokeWidth (camelCase) for React DOM elements
-            return <i data-lucide={name} style={{ width: size, height: size }} className={className} strokeWidth={strokeWidth}></i>;
-        };
-
-        const App = () => {
-            const [isLoggedIn, setIsLoggedIn] = useState(false);
-            const [role, setRole] = useState(null);
-            const [step, setStep] = useState('auth_welcome');
-            const [selectedPayment, setSelectedPayment] = useState(null);
-            const [selectedNotice, setSelectedNotice] = useState(null);
-
-            const handleAccess = (selectedRole) => {
-                if (selectedRole) setRole(selectedRole);
-                setIsLoggedIn(true);
-                setStep('dashboard');
+        // --- COMPONENTE HELPER PARA ICONOS (Reescrito para garantizar renderizado) ---
+        const Icon = ({ name, size = 20, className = "", strokeWidth = 2, fill = "none" }) => {
+            // Diccionario de equivalencias para mantener tu código intacto
+            const nameMap = {
+                'camera': 'ph-camera', 'check-circle': 'ph-check-circle', 'credit-card': 'ph-credit-card',
+                'file-text': 'ph-file-text', 'bell': 'ph-bell', 'trending-up': 'ph-trend-up',
+                'chevron-right': 'ph-caret-right', 'layout-dashboard': 'ph-squares-four', 'settings': 'ph-gear',
+                'shield-check': 'ph-shield-check', 'user': 'ph-user', 'info': 'ph-info', 'users': 'ph-users',
+                'search': 'ph-magnifying-glass', 'check': 'ph-check', 'x': 'ph-x', 'alert-circle': 'ph-warning-circle',
+                'eye': 'ph-eye', 'arrow-right-left': 'ph-arrows-left-right', 'log-in': 'ph-sign-in', 
+                'user-plus': 'ph-user-plus', 'building-2': 'ph-buildings', 'lock': 'ph-lock', 
+                'smartphone': 'ph-device-mobile', 'hash': 'ph-hash', 'wallet': 'ph-wallet', 
+                'download': 'ph-download-simple', 'bar-chart-3': 'ph-chart-bar', 'pie-chart': 'ph-chart-pie',
+                'arrow-up-right': 'ph-arrow-up-right', 'arrow-down-right': 'ph-arrow-down-right', 
+                'arrow-left': 'ph-arrow-left', 'star': 'ph-star', 'trophy': 'ph-trophy', 
+                'message-square': 'ph-chat-circle', 'calendar': 'ph-calendar', 'help-circle': 'ph-question',
+                'video': 'ph-video-camera', 'list-filter': 'ph-faders', 'users2': 'ph-users-three', 
+                'map-pin': 'ph-map-pin', 'clock': 'ph-clock', 'copy': 'ph-copy', 'send': 'ph-paper-plane-right',
+                'image-icon': 'ph-image'
             };
 
+            const mappedName = nameMap[name] || `ph-${name}`;
+            const isFill = fill && fill !== "none";
+            
+            // Asignamos el peso visual del icono
+            let weightClass = 'ph'; 
+            if (isFill) weightClass = 'ph-fill';
+            else if (strokeWidth > 2) weightClass = 'ph-bold';
+
+            // Respetamos los colores pasados por la prop fill o dejamos que herede de className
+            const customColor = (isFill && fill !== "currentColor") ? fill : undefined;
+
+            return <i className={`${weightClass} ${mappedName} ${className}`} style={{ fontSize: size, color: customColor }}></i>;
+        };
+
+        // --- COMPONENTE PRINCIPAL (100% Idéntico a la versión validada) ---
+        const App = () => {
+            // --- ESTADOS DE NAVEGACIÓN Y SESIÓN ---
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [role, setRole] = useState('inquilino'); 
+            const [step, setStep] = useState('auth_welcome'); 
+            const [prevStep, setPrevStep] = useState('dashboard');
+
+            // --- ESTADOS DE DATOS ---
+            const [points, setPoints] = useState(450);
+            const [votedSurveys, setVotedSurveys] = useState({});
+            const [showPointsToast, setShowPointsToast] = useState(false);
+            const [profileImage, setProfileImage] = useState(null);
+            const [ticketMedia, setTicketMedia] = useState({ type: null, url: null });
+            const [casheaStep, setCasheaStep] = useState(1);
+            const [uploadedReceipt, setUploadedReceipt] = useState(null);
+            const [selectedArea, setSelectedArea] = useState(null);
+            const [selectedNotice, setSelectedNotice] = useState(null);
+            const [selectedPayment, setSelectedPayment] = useState(null);
+
+            const TASA_BCV = 480.00; 
+
+            // --- MOCK DATA ---
             const notices = [
-                { id: 1, title: 'Mantenimiento de Bombas', date: '21/04', desc: 'Se realizará limpieza de tanques de 8:00 AM a 12:00 PM. Se recomienda tomar previsiones.', icon: 'info' },
-                { id: 2, title: 'Fumigación Áreas Verdes', date: '25/04', desc: 'Se aplicará tratamiento contra insectos en el jardín y planta baja. Favor mantener mascotas dentro.', icon: 'shield-check' },
-                { id: 3, title: 'Actualización de Seguridad', date: '01/05', desc: 'Nuevos tags de acceso vehicular disponibles en la administración. El sistema viejo se desactivará pronto.', icon: 'lock' }
+                { id: 1, title: 'Mantenimiento de Bombas', date: '21/04', desc: 'Limpieza profunda del sistema hidroneumático para asegurar el suministro.', icon: 'info', responsible: 'Plomería Total C.A.', condo: 'Junta de Condominio Res. El Parque', report: 'Limpieza preventiva anual de filtros y motores.', status: 'Programado', cost: 'Bs. 15.000' },
+                { id: 2, title: 'Fumigación Áreas Verdes', date: '25/04', desc: 'Tratamiento contra insectos en jardines y áreas comunes.', icon: 'shield-check', responsible: 'EcoPlagas', condo: 'Administración El Parque', report: 'Control de termitas y hormigas.', status: 'Pendiente', cost: 'Bs. 8.500' },
+                { id: 3, title: 'Reparación Ascensor B', date: '22/04', desc: 'Cambio de guayas y nivelación de cabina.', icon: 'arrow-up-right', responsible: 'Otis Venezuela', condo: 'Mantenimiento Central', report: 'Falla mecánica detectada en inspección.', status: 'En Proceso', cost: 'Bs. 45.000' },
+                { id: 4, title: 'Pintura Fachada', date: '30/04', desc: 'Inicio de jornada de embellecimiento exterior.', icon: 'map-pin', responsible: 'Pinturas Pro', condo: 'Res. El Parque', report: 'Mejora estética aprobada en asamblea.', status: 'Programado', cost: 'Bs. 120.000' }
             ];
 
-            const receipts = [
-                { id: 'RC-2024-03', month: 'Marzo 2024', amount: 'Bs. 2.100,00', date: '05/03/2024' },
-                { id: 'RC-2024-02', month: 'Febrero 2024', amount: 'Bs. 1.950,00', date: '04/02/2024' },
-                { id: 'RC-2024-01', month: 'Enero 2024', amount: 'Bs. 2.050,00', date: '10/01/2024' }
+            const commonAreas = [
+                { id: 1, name: 'Piscina Olímpica', cost: 'Gratis', rules: 'Gorro obligatorio. Invitados: Max 2.', hours: '8 AM - 8 PM', img: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=500&q=80' },
+                { id: 2, name: 'Salón de Fiestas', cost: 'Bs. 4.800', rules: 'Reserva 15 días antes. Depósito requerido.', hours: '12 PM - 12 AM', img: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=500&q=80' },
+                { id: 3, name: 'Cancha de Pádel', cost: 'Bs. 960', rules: 'Máximo 1.5 horas. Calzado especial.', hours: '6 AM - 10 PM', img: 'https://images.unsplash.com/photo-1626224580194-860c36f6756f?w=500&q=80' }
             ];
 
-            // VISTAS
+            const [history, setHistory] = useState([
+                { id: 'PAY-8842', unit: '4-B', amount: 'Bs. 2.450,00', date: '15/04/2024', ref: '88421099', bank: 'Mercantil', status: 'Validado', category: 'Condominio' },
+                { id: 'PAY-9901', unit: '4-B', amount: 'Bs. 5.000,00', date: '10/03/2024', ref: '99013322', bank: 'Banesco', status: 'Validado', category: 'Extraordinaria' },
+                { id: 'PAY-7721', unit: '4-B', amount: 'Bs. 1.200,00', date: '05/02/2024', ref: '77215544', bank: 'Provincial', status: 'Validado', category: 'Mantenimiento' },
+                { id: 'PAY-5541', unit: '4-B', amount: 'Bs. 960,00', date: '20/01/2024', ref: '55410099', bank: 'BNC', status: 'Validado', category: 'Área Común' }
+            ]);
+
+            // --- HELPERS ---
+            const navigateTo = (newStep) => {
+                setPrevStep(step);
+                setStep(newStep);
+            };
+
+            const handleImageChange = (e) => {
+                const file = e.target.files[0];
+                if (file) setProfileImage(URL.createObjectURL(file));
+            };
+
+            const handleIncidentMedia = (type) => {
+                setTicketMedia({ 
+                    type, 
+                    url: type === 'foto' ? 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&q=80' : 'https://www.w3schools.com/html/mov_bbb.mp4' 
+                });
+            };
+
+            const voteSurvey = (id, rating) => {
+                if (votedSurveys[id]) return;
+                setVotedSurveys({ ...votedSurveys, [id]: rating });
+                setPoints(points + 25);
+                setShowPointsToast(true);
+                setTimeout(() => setShowPointsToast(false), 3000);
+            };
+
+            const formatUSD = (bs) => {
+                if (!bs) return "0.00";
+                const numericValue = typeof bs === 'string' 
+                ? parseFloat(bs.replace('Bs. ', '').replace(/\./g, '').replace(',', '.'))
+                : bs;
+                return isNaN(numericValue) ? "0.00" : (numericValue / TASA_BCV).toFixed(2);
+            };
+
+            // --- VISTAS SECUNDARIAS ---
+
+            const SuccessStep = () => (
+                <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-white animate-in zoom-in">
+                <div className="bg-emerald-100 text-emerald-600 p-8 rounded-full mb-8 shadow-inner">
+                    <Icon name="check-circle" size={80} strokeWidth={3} />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tighter uppercase italic leading-none">¡Completado!</h2>
+                <p className="text-slate-400 text-sm font-bold italic mb-10 text-center">La operación ha sido procesada exitosamente.</p>
+                <button onClick={() => navigateTo('dashboard')} className="w-full bg-blue-900 text-white py-5 rounded-[2.2rem] font-black text-lg shadow-2xl active:scale-95 transition-all uppercase italic">Entendido</button>
+                </div>
+            );
+
             const AuthWelcome = () => (
-                <div className="flex flex-col h-full bg-white p-8 justify-center items-center">
-                    <div className="bg-blue-900 p-6 rounded-[2.5rem] shadow-2xl mb-8">
-                        <Icon name="building-2" size={64} className="text-white" />
-                    </div>
-                    <h1 className="text-3xl font-black text-slate-900 text-center mb-2 tracking-tighter italic">CondoPay VZLA</h1>
-                    <p className="text-slate-500 text-center mb-12 text-sm">Fintech para comunidades eficientes.</p>
-                    <div className="w-full space-y-4">
-                        <button onClick={() => { setRole('inquilino'); setStep('login'); }} className="w-full bg-blue-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all">
-                            <Icon name="user" /> Soy Inquilino
-                        </button>
-                        <button onClick={() => { setRole('administrador'); setStep('login'); }} className="w-full bg-white border-2 border-slate-100 text-slate-700 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all">
-                            <Icon name="users" /> Soy Administrador
-                        </button>
-                    </div>
+                <div className="flex flex-col h-full bg-white p-8 justify-center animate-in fade-in duration-500">
+                <div className="flex justify-center mb-8">
+                    <div className="bg-blue-900 p-5 rounded-[2.5rem] shadow-2xl shadow-blue-200"><Icon name="building-2" size={60} className="text-white" /></div>
+                </div>
+                <h1 className="text-3xl font-black text-slate-900 text-center mb-2 tracking-tighter uppercase italic">CondoPay</h1>
+                <p className="text-slate-500 text-center mb-12 text-sm font-medium italic">Finanzas y comunidad en un solo clic.</p>
+                <div className="space-y-4">
+                    <button onClick={() => { setRole('inquilino'); navigateTo('login'); }} className="w-full bg-blue-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl"><Icon name="user" size={20} /> Soy Residente</button>
+                    <button onClick={() => { setRole('administrador'); navigateTo('login'); }} className="w-full bg-white border-2 border-slate-100 text-slate-700 py-4 rounded-2xl font-bold flex items-center justify-center gap-3 active:scale-95 transition-all"><Icon name="users" size={20} /> Soy Administrador</button>
+                </div>
                 </div>
             );
 
             const Login = () => (
-                <div className="p-8 h-full bg-white flex flex-col">
-                    <button onClick={() => setStep('auth_welcome')} className="mb-8 text-slate-400 font-bold text-xs uppercase tracking-widest self-start">← Volver</button>
-                    <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tighter uppercase italic">Iniciar Sesión</h2>
-                    <p className="text-slate-500 mb-8 text-sm italic">Perfil: {role}</p>
-                    <div className="space-y-4 mb-8">
-                        <input type="email" placeholder="Correo" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none" />
-                        <input type="password" placeholder="Contraseña" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm outline-none" />
-                    </div>
-                    <button onClick={() => handleAccess()} className="w-full bg-blue-900 text-white py-4 rounded-2xl font-black shadow-xl mb-6 uppercase tracking-widest">Entrar</button>
-                    <p className="text-center text-slate-400 text-xs">Demo: No requiere datos reales.</p>
+                <div className="p-8 h-full bg-white flex flex-col pt-16 animate-in slide-in-from-bottom">
+                <button onClick={() => navigateTo('auth_welcome')} className="mb-8 text-slate-400 font-bold text-xs uppercase tracking-widest self-start">← Volver</button>
+                <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tighter uppercase italic text-left">Iniciar Sesión</h2>
+                <p className="text-slate-500 mb-8 text-sm text-left">Acceso como <span className="text-blue-600 font-bold uppercase">{role}</span></p>
+                <div className="space-y-4 mb-8 text-left text-left">
+                    <input type="text" placeholder="Usuario" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" readOnly />
+                    <input type="password" placeholder="Contraseña" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" readOnly />
+                </div>
+                <button onClick={() => { setIsLoggedIn(true); navigateTo('dashboard'); }} className="w-full bg-blue-900 text-white py-4 rounded-2xl font-black shadow-xl uppercase italic">Entrar</button>
                 </div>
             );
 
             const InquilinoDashboard = () => (
                 <div className="flex flex-col h-full bg-slate-50 pb-24 overflow-y-auto no-scrollbar">
-                    <div className="bg-gradient-to-br from-blue-900 to-indigo-900 p-6 text-white rounded-b-[2.5rem] shadow-xl shrink-0">
-                        <div className="flex justify-between items-center mb-6 pt-2">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center font-bold">DM</div>
-                                <div className="text-left"><p className="text-blue-200 text-[10px] uppercase font-semibold">Res. El Parque</p><h1 className="text-lg font-bold">Deivis M.</h1></div>
-                            </div>
-                            <button onClick={() => setStep('settings')} className="bg-white/10 p-2 rounded-xl"><Icon name="settings" size={18} /></button>
+                <div className="bg-gradient-to-br from-blue-900 to-indigo-900 p-6 text-white rounded-b-[3rem] shadow-xl shrink-0 pt-12">
+                    <div className="flex justify-between items-center mb-6">
+                    <div onClick={() => navigateTo('settings')} className="flex items-center gap-3 text-left cursor-pointer">
+                        <div className="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center border border-blue-400/30 font-bold text-sm overflow-hidden shadow-inner">
+                            {profileImage ? <img src={profileImage} className="w-full h-full object-cover" alt="Perfil" /> : 'DM'}
                         </div>
-                        <div className="bg-white/10 p-5 rounded-3xl backdrop-blur-lg border border-white/20">
-                            <div className="flex justify-between items-start mb-1"><p className="text-blue-100 text-xs">Saldo Pendiente</p><span className="bg-amber-500 text-[9px] px-2 py-0.5 rounded-full font-black">ABRIL</span></div>
-                            <div className="flex justify-between items-end">
-                                <h2 className="text-3xl font-extrabold">Bs. 2.450,00</h2>
-                                <button onClick={() => setStep('report')} className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg">Pagar Ahora</button>
-                            </div>
+                        <div><p className="text-blue-200 text-[10px] uppercase font-bold italic tracking-tighter text-left leading-none mb-0.5">Res. El Parque</p><h1 className="text-lg font-black leading-tight text-left">Deivis M.</h1></div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button className="relative p-2 bg-white/10 rounded-xl active:bg-white/20 transition-all"><Icon name="bell" size={18} /></button>
+                        <button onClick={() => navigateTo('streak_view')} className="bg-white/10 px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/10 active:scale-95 transition-all">
+                            <Icon name="clock" size={14} className="text-emerald-400" />
+                            <span className="text-[10px] font-black italic text-left">5🔥</span>
+                        </button>
+                    </div>
+                    </div>
+
+                    <div className="bg-white/10 p-6 rounded-[2.5rem] backdrop-blur-lg border border-white/20 shadow-inner text-left">
+                    <p className="text-blue-200 text-[10px] font-black uppercase tracking-[2px] mb-2 italic text-left">Saldo a la fecha</p>
+                    <div className="flex flex-col gap-5 text-left">
+                        <div className="text-left text-left">
+                        <h2 className="text-4xl font-black tracking-tighter leading-none mb-1 text-left text-left">Bs. 2.450,00</h2>
+                        <p className="text-blue-300 text-xs font-black italic tracking-widest text-left text-left">≈ $ {(2450 / TASA_BCV).toFixed(2)} USD</p>
+                        </div>
+                        <div className="flex flex-col gap-4 text-left">
+                        <p className="text-blue-100 text-[10px] font-medium leading-relaxed italic border-l-2 border-emerald-400 pl-3 text-left">
+                            Paga antes del <span className="font-black text-white">30 del mes</span> y obtén <span className="text-emerald-400 font-black">50pts</span> para un descuento.
+                        </p>
+                        <button onClick={() => navigateTo('report')} className="w-full bg-emerald-500 text-white py-4 rounded-2xl text-[11px] font-black uppercase shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 tracking-[2px] text-center">
+                            <Icon name="credit-card" size={18} /> Reporta tu pago
+                        </button>
                         </div>
                     </div>
-                    <div className="px-6 -mt-5 shrink-0">
-                        <div className="bg-white rounded-3xl shadow-md p-4 flex justify-around border border-slate-100">
-                            <div className="text-center">
-                                <Icon name="shield-check" className="text-blue-600 mx-auto mb-1" />
-                                <p className="text-slate-400 text-[9px] uppercase font-black">Fondo Reserva</p>
-                                <p className="text-blue-900 font-black text-sm">$1.240</p>
-                            </div>
-                            <div className="text-center">
-                                <Icon name="trending-up" className="text-emerald-600 mx-auto mb-1" />
-                                <p className="text-slate-400 text-[9px] uppercase font-black">Tasa BCV</p>
-                                <p className="text-slate-800 font-black text-sm">36.45</p>
-                            </div>
-                        </div>
                     </div>
-                    <div className="px-6 mt-6 shrink-0">
-                        <h3 className="text-slate-800 font-black text-xs uppercase mb-3 ml-1">Anuncios</h3>
-                        <div className="space-y-3">
-                            {notices.map(n => (
-                                <button key={n.id} onClick={() => { setSelectedNotice(n); setStep('notice_detail'); }} className="w-full bg-white border p-4 rounded-2xl flex gap-4 items-center shadow-sm">
-                                    <div className="bg-blue-50 p-3 rounded-xl text-blue-600"><Icon name={n.icon} size={16}/></div>
-                                    <div className="flex-1 text-left"><h4 className="text-slate-800 text-xs font-black uppercase tracking-tight">{n.title}</h4><p className="text-slate-400 text-[10px]">{n.date}</p></div>
-                                    <Icon name="chevron-right" size={14} className="text-slate-300" />
-                                </button>
-                            ))}
+                </div>
+
+                <div className="px-6 -mt-5 shrink-0">
+                    <div className="bg-white rounded-3xl shadow-md p-4 flex justify-around border border-slate-100">
+                    <div className="text-center"><p className="text-slate-400 text-[8px] uppercase font-black mb-1 tracking-widest text-center">Tasa BCV</p><p className="text-blue-900 font-black text-sm italic text-center">Bs. {TASA_BCV.toFixed(2)}</p></div>
+                    <div className="w-px bg-slate-100 h-6 self-center"></div>
+                    <div className="text-center"><p className="text-slate-400 text-[8px] uppercase font-black mb-1 tracking-widest text-center">Puntos</p><div className="flex items-center gap-1 text-amber-600 font-black text-sm italic text-center"><Icon name="star" size={14} fill="#d97706"/> {points}</div></div>
+                    </div>
+                </div>
+
+                <div className="px-6 mt-6 text-left">
+                    <div className="flex justify-between items-center mb-3 text-left">
+                        <h3 className="text-slate-800 font-black text-xs uppercase tracking-widest italic ml-1 text-left">Anuncios Recientes</h3>
+                        <span className="text-blue-600 text-[9px] font-black uppercase underline text-right">Ver todos</span>
+                    </div>
+                    <div className="space-y-3 text-left">
+                    {notices.map(notice => (
+                        <button key={notice.id} onClick={() => { setSelectedNotice(notice); navigateTo('notice_detail'); }} className="w-full bg-white border border-slate-100 p-4 rounded-[1.8rem] flex gap-4 items-center group active:bg-slate-50 transition-all shadow-sm text-left">
+                        <div className="bg-blue-50 p-3 rounded-2xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors text-center"><Icon name={notice.icon} size={18} /></div>
+                        <div className="flex-1 text-left"><h4 className="text-slate-800 text-[10px] font-black uppercase italic tracking-tight leading-none mb-1 text-left text-left">{notice.title}</h4><p className="text-slate-400 text-[9px] text-left text-left">{notice.date}</p></div>
+                        <Icon name="chevron-right" size={14} className="text-slate-300" />
+                        </button>
+                    ))}
+                    </div>
+                </div>
+                </div>
+            );
+
+            const SettingsScreen = () => (
+                <div className="h-full bg-white flex flex-col overflow-y-auto pb-24 no-scrollbar">
+                <div className="p-6 border-b flex justify-between items-center bg-white sticky top-0 z-10 pt-12">
+                    <button onClick={() => navigateTo('dashboard')} className="text-slate-500 font-black text-xs italic tracking-widest uppercase italic">Cerrar</button>
+                    <h2 className="font-black text-[11px] uppercase tracking-[3px] italic ml-4">Perfil de Usuario</h2>
+                    <button onClick={() => { setIsLoggedIn(false); navigateTo('auth_welcome'); }} className="bg-rose-50 text-rose-500 px-3 py-1.5 rounded-xl font-black text-[10px] uppercase italic">Salir</button>
+                </div>
+                <div className="p-6 space-y-6 text-center">
+                    <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 flex flex-col items-center shadow-inner text-center">
+                    <div className="relative w-24 h-24 mb-4 text-center">
+                        <div className="w-full h-full rounded-full bg-blue-900 flex items-center justify-center text-white font-black text-3xl shadow-xl border-4 border-white overflow-hidden text-center">
+                            {profileImage ? <img src={profileImage} className="w-full h-full object-cover" alt="Perfil" /> : 'DM'}
                         </div>
+                        <label className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-lg border border-slate-100 cursor-pointer active:scale-90 transition-all text-center">
+                            <Icon name="camera" size={16} className="text-blue-900" /><input type="file" className="hidden" onChange={handleImageChange} accept="image/*" />
+                        </label>
+                    </div>
+                    <h4 className="font-black text-xl italic text-slate-900 leading-none mb-1 text-center">Deivis Montenegro</h4>
+                    <p className="text-slate-400 text-[9px] font-black uppercase tracking-[2px] mb-6 underline decoration-blue-200 text-center">Apto 4-B • Propietario</p>
+                    <div className="flex gap-3 w-full text-center">
+                        <div className="flex-1 bg-emerald-50 border border-emerald-100 p-3 rounded-2xl text-center"><p className="text-[8px] font-black text-emerald-600 uppercase italic mb-1 text-center">Estatus</p><span className="text-xs font-black text-emerald-700 italic block text-center">SOLVENTE</span></div>
+                        <div className="flex-1 bg-amber-50 border border-amber-100 p-3 rounded-2xl text-center"><p className="text-[8px] font-black text-amber-600 uppercase italic mb-1 text-center">Rango</p><span className="text-xs font-black text-amber-700 italic flex items-center justify-center gap-1 text-center"><Icon name="trophy" size={12}/> ORO</span></div>
+                    </div>
+                    </div>
+                    <section className="text-left">
+                    <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[2px] ml-1 italic underline underline-offset-8 text-left mb-4">Gestión & Servicios</h3>
+                    <div className="grid grid-cols-2 gap-3 text-left">
+                        {[
+                        { id: 'my_finances', label: 'Finanzas', icon: 'wallet', color: 'bg-blue-50 text-blue-600' },
+                        { id: 'payments_list', label: 'Pagos', icon: 'credit-card', color: 'bg-emerald-50 text-emerald-600' },
+                        { id: 'common_areas', label: 'Áreas', icon: 'map-pin', color: 'bg-amber-50 text-amber-600' },
+                        { id: 'surveys', label: 'Encuestas', icon: 'file-text', color: 'bg-indigo-50 text-indigo-600' },
+                        { id: 'tickets', label: 'Reportes', icon: 'alert-circle', color: 'bg-rose-50 text-rose-600' },
+                        { id: 'chat_view', label: 'Chat', icon: 'users2', color: 'bg-slate-100 text-slate-800' }
+                        ].map(item => (
+                        <button key={item.id} onClick={() => navigateTo(item.id)} className="bg-white border border-slate-100 p-5 rounded-[2.2rem] flex flex-col items-center gap-2 active:scale-95 transition-all shadow-sm group text-center">
+                            <div className={`${item.color} p-4 rounded-[1.5rem] group-hover:scale-110 transition-all shadow-inner flex items-center justify-center`}><Icon name={item.icon} size={20} /></div>
+                            <span className="font-black text-[9px] uppercase tracking-widest text-slate-800 text-center">{item.label}</span>
+                        </button>
+                        ))}
+                    </div>
+                    </section>
+                </div>
+                </div>
+            );
+
+            const MyFinances = () => (
+                <div className="h-full bg-slate-50 flex flex-col animate-in slide-in-from-right">
+                <div className="p-6 bg-white border-b flex items-center gap-4 pt-12 shadow-sm">
+                    <button onClick={() => navigateTo('settings')} className="text-slate-400 uppercase font-black text-[10px] italic">← Perfil</button>
+                    <h2 className="font-black text-xs uppercase italic tracking-[2px]">Mis Finanzas</h2>
+                </div>
+                <div className="p-6 space-y-6 overflow-y-auto text-left pb-24 text-left">
+                    <div className="bg-slate-900 rounded-[2.5rem] p-7 text-white shadow-2xl relative overflow-hidden text-left text-left">
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1 italic text-left">Balance Consolidado</p>
+                    <div className="mb-4 text-left text-left">
+                        <h3 className="text-3xl font-black italic tracking-tighter leading-none text-left">Bs. 2.450,00</h3>
+                        <p className="text-slate-400 text-[10px] font-black italic mt-1 uppercase text-left">≈ $ {(2450 / TASA_BCV).toFixed(2)} USD</p>
+                    </div>
+                    <div className="space-y-2 text-[10px] font-medium opacity-80 pt-4 border-t border-white/5 text-left">
+                        <div className="flex justify-between items-center text-left text-left text-left"><span>Condominio Mensual</span><span className="font-black italic">Bs. 1.950,00 ($4.06)</span></div>
+                        <div className="flex justify-between items-center text-left text-left text-left text-left text-left"><span>Extraordinarias</span><span className="font-black italic">Bs. 500,00 ($1.04)</span></div>
+                    </div>
+                    </div>
+                    <section className="text-left text-left">
+                    <h3 className="text-slate-800 font-black text-[10px] uppercase tracking-widest italic mb-3 ml-1 text-left text-left">Histórico por Categoría</h3>
+                    <div className="space-y-3 text-left text-left">
+                        {[
+                        { cat: 'Condominio', total: 'Bs. 24.000', color: 'bg-blue-50 text-blue-600' },
+                        { cat: 'Mantenimiento', total: 'Bs. 1.200', color: 'bg-emerald-100 text-emerald-600' }
+                        ].map(item => (
+                        <div key={item.cat} className="bg-white p-4 rounded-2xl flex items-center justify-between border border-slate-100 shadow-sm text-left text-left">
+                            <div className="flex items-center gap-3 text-left"><div className={`p-2 rounded-xl ${item.color} flex items-center justify-center`}><Icon name="list-filter" size={18}/></div><span className="font-black text-[10px] uppercase italic text-slate-700 text-left">{item.cat}</span></div>
+                            <div className="text-right text-right"><p className="font-black text-xs text-slate-900 italic leading-none text-right">{item.total}</p><p className="text-[9px] font-bold text-slate-400 italic uppercase mt-1 text-right">≈ $ {formatUSD(item.total)} USD</p></div>
+                        </div>
+                        ))}
+                    </div>
+                    </section>
+                </div>
+                </div>
+            );
+
+            const PaymentsList = () => (
+                <div className="h-full bg-slate-50 flex flex-col animate-in slide-in-from-right">
+                <div className="p-6 bg-white border-b flex items-center gap-4 pt-12 shadow-sm">
+                    <button onClick={() => navigateTo('settings')} className="text-slate-400 uppercase font-black text-[10px] italic">← Perfil</button>
+                    <h2 className="font-black text-xs uppercase italic tracking-[2px]">Histórico de Pagos</h2>
+                </div>
+                <div className="p-6 space-y-3 overflow-y-auto text-left pb-24 text-left">
+                    {history.map(pay => (
+                    <button key={pay.id} onClick={() => { setSelectedPayment(pay); navigateTo('payment_receipt'); }} className="w-full bg-white p-5 rounded-[2.2rem] border border-slate-100 flex items-center justify-between active:scale-95 transition-all shadow-sm text-left">
+                        <div className="flex items-center gap-4 text-left">
+                            <div className="bg-emerald-50 text-emerald-600 p-3 rounded-2xl shadow-inner flex items-center justify-center"><Icon name="check" size={20} strokeWidth={3} /></div>
+                            <div className="text-left text-left text-left"><p className="font-black text-slate-800 text-xs italic uppercase tracking-tighter leading-none mb-1 text-left">{pay.category}</p><p className="text-slate-400 text-[9px] font-bold text-left">{pay.date}</p></div>
+                        </div>
+                        <div className="text-right text-right"><p className="font-black text-slate-900 text-sm italic text-right">{pay.amount}</p><p className="text-emerald-500 text-[8px] font-black uppercase italic text-right">Validado</p></div>
+                    </button>
+                    ))}
+                </div>
+                </div>
+            );
+
+            const PaymentReceipt = () => (
+                <div className="h-full bg-white flex flex-col text-left animate-in slide-in-from-bottom text-left">
+                    <div className="p-6 border-b bg-slate-50 flex items-center gap-4 pt-12 shadow-sm"><button onClick={() => navigateTo('payments_list')} className="text-slate-500 font-black text-[10px] uppercase italic">Volver</button><h2 className="font-black text-xs uppercase italic tracking-[2px]">Comprobante</h2></div>
+                    <div className="p-8 space-y-6 text-left">
+                        <div className="bg-slate-950 p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden flex flex-col items-center text-center text-left">
+                            <div className="bg-emerald-500 p-2 rounded-full mb-4 shadow-lg shadow-emerald-500/20 flex items-center justify-center"><Icon name="check" size={20} className="text-white" strokeWidth={3}/></div>
+                            <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1 italic text-center">Operación Exitosa</p>
+                            <h3 className="text-3xl font-black italic tracking-tighter mb-8 leading-none text-center">{selectedPayment?.amount}</h3>
+                            <div className="w-full border-t border-white/10 pt-6 space-y-4 text-left">
+                                <div className="flex justify-between items-center text-[9px] font-black uppercase opacity-60 text-left"><span>Unidad de Pago</span><span className="text-white italic">Apto {selectedPayment?.unit}</span></div>
+                                <div className="flex justify-between items-center text-[9px] font-black uppercase opacity-60 text-left"><span>Referencia</span><span className="text-white italic">#{selectedPayment?.ref}</span></div>
+                                <div className="flex justify-between items-center text-[9px] font-black uppercase opacity-60 text-left"><span>Banco</span><span className="text-white italic text-right">{selectedPayment?.bank}</span></div>
+                                <div className="flex justify-between items-center text-[9px] font-black uppercase opacity-60 text-left"><span>Fecha</span><span className="text-white italic text-right">{selectedPayment?.date}</span></div>
+                            </div>
+                        </div>
+                        <button className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-xs uppercase italic flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all text-center"><Icon name="download" size={18}/> Descargar PDF</button>
                     </div>
                 </div>
             );
 
-            const AdminDashboard = () => (
-                <div className="flex flex-col h-full bg-slate-50 pb-24 overflow-y-auto no-scrollbar">
-                    <div className="bg-slate-900 p-6 text-white rounded-b-[2.5rem] shadow-xl shrink-0">
-                        <div className="flex justify-between items-center mb-6 pt-2">
-                            <h1 className="text-lg font-black tracking-tight uppercase italic">Panel Administración</h1>
-                            <button onClick={() => setStep('settings')} className="bg-white/10 p-2 rounded-xl"><Icon name="settings" size={18} /></button>
+            const CommonAreas = () => (
+                <div className="h-full bg-slate-50 flex flex-col overflow-y-auto no-scrollbar pb-24 text-left">
+                <div className="p-6 border-b bg-white sticky top-0 z-10 pt-12 flex items-center gap-4 shadow-sm text-left">
+                    <button onClick={() => navigateTo('settings')} className="text-slate-400 font-black text-[10px] uppercase italic text-left">← Perfil</button>
+                    <h2 className="text-xs font-black text-slate-900 italic uppercase tracking-[2px] text-left">Áreas Comunes</h2>
+                </div>
+                <div className="p-6 space-y-4 text-left text-left">
+                    {commonAreas.map(area => (
+                    <button key={area.id} onClick={() => { setSelectedArea(area); navigateTo('area_detail'); }} className="w-full bg-white rounded-[2.2rem] overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-slate-100 group text-left">
+                        <div className="h-36 overflow-hidden relative text-left">
+                        <img src={area.img} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={area.name} />
+                        <div className={`absolute bottom-3 left-3 px-3 py-1 rounded-full text-[9px] font-black uppercase italic shadow-sm ${area.cost === 'Gratis' ? 'bg-emerald-500 text-white' : 'bg-white/90 backdrop-blur-md text-blue-900'}`}>{area.cost}</div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3 mb-4">
-                            <div className="bg-white/5 border border-white/10 p-4 rounded-3xl"><p className="text-slate-500 text-[10px] font-black mb-1 uppercase tracking-tighter">Por Conciliar</p><h2 className="text-2xl font-black text-amber-400 italic">12</h2></div>
-                            <div className="bg-white/5 border border-white/10 p-4 rounded-3xl"><p className="text-slate-500 text-[10px] font-black mb-1 uppercase tracking-tighter">Morosidad</p><h2 className="text-2xl font-black text-rose-500 italic">18%</h2></div>
+                        <div className="p-5 flex justify-between items-center text-left text-left">
+                        <div className="text-left text-left"><p className="font-black text-sm uppercase text-slate-900 leading-tight mb-1 text-left text-left">{area.name}</p><p className="text-slate-400 text-[10px] flex items-center gap-1 text-left text-left"><Icon name="clock" size={10}/> {area.hours}</p></div>
+                        <Icon name="chevron-right" size={18} className="text-slate-200" />
                         </div>
-                        <div className="bg-blue-600/20 p-4 rounded-2xl border border-blue-500/20">
-                            <div className="flex justify-between text-[10px] font-black uppercase mb-1"><span>Recaudación Mes</span><span>82%</span></div>
-                            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-blue-500 w-[82%]"></div></div>
+                    </button>
+                    ))}
+                </div>
+                </div>
+            );
+
+            const AreaDetail = () => (
+                <div className="h-full bg-white flex flex-col text-left overflow-y-auto pb-24 no-scrollbar text-left">
+                    <div className="p-6 border-b flex items-center gap-4 bg-slate-50 pt-12 text-left"><button onClick={() => navigateTo('common_areas')} className="text-slate-500 font-black text-[10px] uppercase italic text-left">Volver</button><h2 className="font-black text-xs uppercase italic tracking-[2px] text-left">Detalle Área</h2></div>
+                    <div className="h-60 w-full overflow-hidden relative text-left"><img src={selectedArea?.img} className="w-full h-full object-cover" alt="Área" /></div>
+                    <div className="p-8 pb-32 text-left relative -mt-10 bg-white rounded-t-[3.5rem] shadow-2xl text-left">
+                        <div className="flex justify-between items-start mb-6 text-left text-left text-left">
+                            <div className="text-left text-left"><h3 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase leading-none text-left text-left">{selectedArea?.name}</h3><p className="text-blue-600 text-[10px] font-black mt-2 uppercase tracking-widest italic text-left text-left">{selectedArea?.hours}</p></div>
+                            <div className={`px-4 py-2 rounded-2xl border text-center text-center ${selectedArea?.cost === 'Gratis' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-blue-50 border-blue-100 text-blue-900'}`}><p className="text-[8px] font-black uppercase italic text-center text-center text-center">Estado</p><p className="text-sm font-black text-center text-center text-center">{selectedArea?.cost}</p></div>
+                        </div>
+                        <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 mb-6 text-left text-left">
+                            <h4 className="font-black text-[10px] uppercase tracking-[3px] mb-3 text-slate-400 italic text-left text-left">Reglamento</h4>
+                            <p className="text-slate-600 text-[11px] leading-relaxed font-bold italic text-left text-left">{selectedArea?.rules}</p>
+                        </div>
+                        <button onClick={() => { 
+                            if (selectedArea?.cost === 'Gratis') navigateTo('success'); 
+                            else { setCasheaStep(1); navigateTo('pay_cashea'); } 
+                        }} className={`w-full text-white py-5 rounded-[2rem] font-black text-sm shadow-xl flex items-center justify-center gap-3 uppercase italic tracking-[3px] active:scale-95 transition-all text-center ${selectedArea?.cost === 'Gratis' ? 'bg-emerald-600' : 'bg-slate-950'}`}>
+                            <Icon name={selectedArea?.cost === 'Gratis' ? "check-circle" : "calendar"} size={18}/> 
+                            {selectedArea?.cost === 'Gratis' ? 'Confirmar Reserva' : 'Confirmar y Pagar'}
+                        </button>
+                    </div>
+                </div>
+            );
+
+            const PayCashea = () => (
+                <div className="h-full bg-white flex flex-col p-8 pt-16 text-left overflow-y-auto no-scrollbar text-left">
+                <button onClick={() => navigateTo('area_detail')} className="text-slate-500 font-black text-[10px] uppercase mb-8 italic self-start text-left">← Volver</button>
+                {casheaStep === 1 ? (
+                    <div className="space-y-6 animate-in fade-in text-left">
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic text-left leading-none text-left">Estamos cargando los datos de pago</h2>
+                    <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 text-left text-left">
+                        <p className="text-[9px] font-black text-slate-400 uppercase italic mb-4 tracking-widest text-left text-left">Receptor Oficial</p>
+                        <div className="space-y-5 text-left text-left">
+                        <div className="flex justify-between items-center text-left text-left text-left"><div className="text-left text-left"><p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-left text-left text-left">Banco Receptor</p><p className="text-xs font-black text-slate-800 uppercase text-left leading-tight text-left text-left">Banesco Corriente</p></div><Icon name="copy" size={16} className="text-blue-600"/></div>
+                        <div className="flex justify-between items-center text-left text-left text-left text-left"><div className="text-left text-left text-left text-left"><p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-left text-left text-left text-left">RIF</p><p className="text-xs font-black text-slate-800 text-left uppercase text-left text-left text-left">J-30444555-1</p></div><Icon name="copy" size={16} className="text-blue-600"/></div>
+                        <div className="flex justify-between items-center text-left text-left text-left text-left text-left"><div className="text-left text-left text-left text-left text-left text-left"><p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-left text-left text-left text-left text-left">Teléfono</p><p className="text-xs font-black text-slate-800 text-left text-left text-left text-left">0414-2223344</p></div><Icon name="copy" size={16} className="text-blue-600"/></div>
                         </div>
                     </div>
-                    <div className="p-6 space-y-4">
-                        <h3 className="text-slate-800 font-black text-xs uppercase italic tracking-widest">Validación de Pagos</h3>
-                        {[
-                            { id: 1, unit: 'PH-A', name: 'Ricardo Gómez', amount: 'Bs. 4.500,00', ref: '#9982' },
-                            { id: 2, unit: '4-B', name: 'Deivis Montenegro', amount: 'Bs. 2.450,00', ref: '#8842' },
-                        ].map((item) => (
-                            <div key={item.id} onClick={() => { setSelectedPayment(item); setStep('admin_detail'); }} className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-between active:scale-[0.98] transition-transform">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-xs text-slate-400">{item.unit}</div>
-                                    <div><p className="text-slate-900 font-black text-xs uppercase italic">{item.name}</p><p className="text-slate-500 text-[10px] font-bold">{item.amount}</p></div>
-                                </div>
-                                <Icon name="chevron-right" size={18} className="text-slate-300" />
+                    <div className="bg-slate-950 p-6 rounded-[2.5rem] text-center text-white shadow-xl text-center">
+                        <p className="text-[9px] font-black text-blue-400 uppercase mb-1 tracking-widest italic text-center text-center">Monto a Liquidar</p>
+                        <h4 className="text-3xl font-black italic tracking-tighter uppercase leading-none text-center text-center">{selectedArea?.cost}</h4>
+                        <p className="text-slate-500 text-[10px] font-black uppercase mt-1 text-center text-center">≈ $ {formatUSD(selectedArea?.cost)} USD</p>
+                    </div>
+                    <div className="flex gap-3 text-center">
+                        <button className="flex-1 bg-slate-100 text-slate-900 py-4 rounded-2xl font-black text-[10px] uppercase italic tracking-widest flex items-center justify-center gap-2 text-center shadow-sm"><Icon name="copy" size={14}/> Copiar Datos</button>
+                        <label className="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase italic tracking-widest flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all shadow-lg shadow-blue-200 text-center">
+                            <Icon name="camera" size={14}/> {uploadedReceipt ? 'Cargado' : 'Subir Comprobante'}
+                            <input type="file" className="hidden" onChange={(e) => setUploadedReceipt(URL.createObjectURL(e.target.files[0]))} />
+                        </label>
+                    </div>
+                    <button disabled={!uploadedReceipt} onClick={() => { setCasheaStep(2); setTimeout(() => navigateTo('success'), 4000); }} className={`w-full py-5 rounded-[2rem] font-black text-sm uppercase italic tracking-[2px] transition-all text-center ${uploadedReceipt ? 'bg-emerald-600 text-white shadow-xl' : 'bg-slate-100 text-slate-300'}`}>Confirmar Pago</button>
+                    </div>
+                ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center animate-in zoom-in text-center">
+                    <div className="w-56 h-72 border-4 border-blue-900/30 rounded-[3rem] relative overflow-hidden mb-12 bg-slate-50 shadow-inner mx-auto text-center">
+                        {uploadedReceipt && <img src={uploadedReceipt} className="w-full h-full object-cover opacity-50" alt="Recibo" />}
+                        <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500 shadow-[0_0_20px_#3b82f6] animate-scan text-center"></div>
+                        <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[1px] text-center">
+                            <div className="w-14 h-14 border-4 border-blue-950 border-t-transparent rounded-full animate-spin text-center"></div>
+                        </div>
+                    </div>
+                    <h2 className="text-xl font-black italic tracking-widest uppercase text-center animate-pulse text-center">La IA está leyendo los datos</h2>
+                    <p className="text-slate-400 text-[10px] mt-2 font-bold uppercase italic tracking-tighter text-center text-center">Procesando firma digital del comprobante...</p>
+                    </div>
+                )}
+                </div>
+            );
+
+            const Surveys = () => (
+                <div className="h-full bg-slate-50 flex flex-col overflow-y-auto no-scrollbar pb-24 text-left text-left">
+                <div className="p-6 border-b bg-white sticky top-0 z-10 pt-12 flex items-center gap-4 shadow-sm text-left">
+                    <button onClick={() => navigateTo('settings')} className="text-slate-400 font-black text-[10px] uppercase italic text-left">← Perfil</button>
+                    <h2 className="text-xs font-black text-slate-900 italic uppercase tracking-[2px] text-left">Opinión & Voto</h2>
+                </div>
+                <div className="p-6 space-y-6 text-left text-left">
+                    <div onClick={() => navigateTo('assembly_summary')} className="bg-gradient-to-br from-indigo-900 to-blue-900 p-7 rounded-[2.5rem] text-white shadow-xl cursor-pointer active:scale-95 transition-all relative overflow-hidden group text-left text-left">
+                        <div className="absolute -right-4 -top-4 opacity-10 group-hover:rotate-12 transition-transform text-right"><Icon name="file-text" size={100}/></div>
+                        <p className="text-[10px] font-black opacity-60 uppercase mb-1 italic tracking-widest text-left text-left">Asamblea General</p>
+                        <h4 className="text-lg font-black italic tracking-tighter mb-4 leading-tight text-left text-left">Leer resumen PDF: Acuerdos Abril 2026</h4>
+                        <div className="flex items-center gap-2 text-[10px] font-black uppercase text-left text-left"><Icon name="file-text" size={16} className="text-blue-300"/> Ver Acta Estructurada</div>
+                    </div>
+                    
+                    <h3 className="text-slate-800 font-black text-[10px] uppercase tracking-widest italic ml-1 underline decoration-blue-200 underline-offset-4 text-left text-left">Encuestas Activas</h3>
+                    
+                    {[{ id: 101, title: 'Servicio de Seguridad 24/7', provider: 'Vigilancia El Roble', date: 'Vence 24/04', days: 3 }, { id: 102, title: 'Limpieza de Áreas Sociales', provider: 'ServiCondo Express', date: 'Vence 28/04', days: 7 }].map(survey => (
+                        <div key={survey.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden text-left text-left">
+                            {votedSurveys[survey.id] && <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[8px] font-black px-4 py-1.5 rounded-bl-2xl italic uppercase tracking-widest text-center">Votado</div>}
+                            <h4 className="font-black text-[11px] uppercase italic text-slate-900 mb-1 leading-tight text-left text-left">{survey.title}</h4>
+                            <p className="text-slate-400 text-[9px] font-bold mb-4 text-left text-left text-left">{survey.provider} • <span className="text-blue-600">Quedan {survey.days} días</span></p>
+                            <div className="flex gap-2.5 text-left text-left text-left">
+                                {[1,2,3,4,5].map(star => (
+                                    <button key={star} disabled={votedSurveys[survey.id]} onClick={() => voteSurvey(survey.id, star)} className={`p-2.5 rounded-2xl transition-all text-center ${votedSurveys[survey.id] >= star ? 'bg-amber-400 text-white shadow-lg' : 'bg-slate-50 text-slate-300'}`}>
+                                        <Icon name="star" size={18} fill={votedSurveys[survey.id] >= star ? 'currentColor' : 'none'}/>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                {showPointsToast && ( <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-in slide-in-from-top z-[150] text-center"><Icon name="trophy" size={18} className="text-yellow-400" /><span className="font-black text-xs italic uppercase tracking-widest text-center">+25 PUNTOS POR VOTAR</span></div> )}
+                </div>
+            );
+
+            const AssemblySummary = () => (
+                <div className="h-full bg-white flex flex-col text-left overflow-y-auto no-scrollbar pb-10 text-left text-left">
+                    <div className="p-6 border-b bg-slate-50 flex items-center gap-4 pt-12 shadow-sm text-left text-left"><button onClick={() => navigateTo('surveys')} className="text-slate-500 font-black text-[10px] uppercase italic text-left">Cerrar</button><h2 className="font-black text-xs uppercase italic tracking-[2px] text-left">Resumen de Asamblea</h2></div>
+                    <div className="p-8 space-y-6 text-left text-left text-left">
+                        <article className="space-y-6 text-slate-700 text-sm font-medium italic leading-relaxed text-left text-left">
+                            <div className="border-l-4 border-blue-900 pl-4 bg-slate-50 p-4 rounded-r-3xl text-left text-left">
+                                <h4 className="font-black text-slate-900 uppercase italic text-[11px] mb-2 tracking-widest text-left text-left text-left">1. Apertura y Quórum</h4>
+                                <p className="text-left text-left text-left">Siendo las 19:00 horas del 15 de Abril de 2026, se dio inicio a la Asamblea General Extraordinaria con una asistencia del 72% de los copropietarios, validando el quórum legal.</p>
+                            </div>
+                            <div className="text-left text-left text-left text-left">
+                                <h4 className="font-black text-slate-900 uppercase italic text-[11px] mb-2 tracking-widest text-left text-left text-left">2. Acuerdos de Mantenimiento</h4>
+                                <ul className="list-disc pl-5 space-y-2 text-left text-left text-left">
+                                    <li className="text-left text-left">Aprobada la impermeabilización de la Torre B con un fondo de reserva especial.</li>
+                                    <li className="text-left text-left">Ratificación de la empresa "Vigilancia El Roble" por un periodo adicional de 6 meses.</li>
+                                    <li className="text-left text-left">Implementación obligatoria del sistema de acceso digital CondoPay para visitantes.</li>
+                                </ul>
+                            </div>
+                            <div className="text-left text-left text-left text-left">
+                                <h4 className="font-black text-slate-900 uppercase italic text-[11px] mb-2 tracking-widest text-left text-left text-left">3. Estados Financieros</h4>
+                                <p className="text-left text-left text-left text-left">Se presentó el balance consolidado del primer trimestre, mostrando una morosidad reducida al 8.5% gracias al sistema de pronto pago y racha CondoPay.</p>
+                            </div>
+                        </article>
+                        <button className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase italic tracking-widest flex items-center justify-center gap-2 shadow-xl text-center"><Icon name="download" size={16}/> Descargar Acta Oficial</button>
+                    </div>
+                </div>
+            );
+
+            const Tickets = () => (
+                <div className="h-full bg-white flex flex-col overflow-y-auto no-scrollbar pb-24 text-left text-left">
+                <div className="p-6 border-b bg-slate-50 flex items-center gap-4 pt-12 shadow-sm text-left"><button onClick={() => navigateTo('settings')} className="text-slate-400 font-black text-[10px] uppercase italic text-left">Volver</button><h2 className="font-black text-xs uppercase italic tracking-[2px] text-left">Nueva Incidencia</h2></div>
+                <div className="p-8 space-y-6 text-left text-left text-left">
+                    <div className="space-y-2 text-left text-left"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic ml-1 text-left text-left">Descripción del Problema</label><textarea rows="3" placeholder="Ej: Falla en iluminación pasillo 4..." className="w-full p-4 bg-slate-50 border border-slate-100 rounded-3xl text-sm italic shadow-inner outline-none text-left text-left"></textarea></div>
+                    <div className="grid grid-cols-2 gap-4 text-left text-left">
+                    <div className="space-y-2 text-left text-left text-left text-left">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic ml-1 text-left text-left text-left">Foto Evidencia</label>
+                        <button onClick={() => handleIncidentMedia('foto')} className={`w-full aspect-square bg-slate-50 border-2 border-dashed rounded-[2.5rem] flex flex-col items-center justify-center gap-2 text-slate-400 transition-all overflow-hidden text-center ${ticketMedia.type === 'foto' ? 'border-blue-500' : 'border-slate-200'}`}>
+                            {ticketMedia.type === 'foto' ? <img src={ticketMedia.url} className="w-full h-full object-cover" alt="Evidencia" /> : <React.Fragment><Icon name="camera" size={24}/><span className="text-[8px] font-black uppercase text-center text-center">Subir Foto</span></React.Fragment>}
+                        </button>
+                    </div>
+                    <div className="space-y-2 text-left text-left text-left text-left">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic ml-1 text-left text-left text-left">Vídeo Corto</label>
+                        <button onClick={() => handleIncidentMedia('video')} className={`w-full aspect-square bg-slate-50 border-2 border-dashed rounded-[2.5rem] flex flex-col items-center justify-center gap-2 text-slate-400 transition-all overflow-hidden text-center ${ticketMedia.type === 'video' ? 'border-red-500' : 'border-slate-200'}`}>
+                            {ticketMedia.type === 'video' ? <video src={ticketMedia.url} className="w-full h-full object-cover" autoPlay muted loop /> : <React.Fragment><Icon name="video" size={24}/><span className="text-[8px] font-black uppercase tracking-widest text-center text-center">Grabar Vídeo</span></React.Fragment>}
+                        </button>
+                    </div>
+                    </div>
+                    <button onClick={() => navigateTo('dashboard')} className="w-full bg-rose-600 text-white py-5 rounded-[2.2rem] font-black text-sm uppercase italic tracking-[2px] shadow-xl shadow-rose-200 active:scale-95 transition-all text-center text-center">Enviar Reporte Crítico</button>
+                </div>
+                </div>
+            );
+
+            const StreakView = () => (
+                <div className="h-full bg-white flex flex-col text-center p-8 pt-16 animate-in slide-in-from-bottom text-center">
+                    <button onClick={() => navigateTo('dashboard')} className="text-slate-400 font-bold text-xs uppercase mb-12 self-start tracking-widest text-left">← Inicio</button>
+                    <div className="relative inline-block mb-8 mx-auto text-center">
+                        <div className="w-32 h-32 bg-emerald-50 rounded-full flex items-center justify-center border-4 border-emerald-500 shadow-2xl animate-pulse mx-auto text-center">
+                            <Icon name="clock" size={60} className="text-emerald-600" strokeWidth={3} />
+                        </div>
+                        <div className="absolute -bottom-2 -right-2 bg-slate-900 text-white p-3 rounded-2xl shadow-xl border-4 border-white font-black text-xl italic tracking-tighter leading-none text-center text-center">5🔥</div>
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic leading-none mb-2 text-center text-center">Pagador Élite</h3>
+                    <p className="text-slate-400 text-xs font-bold italic mb-10 uppercase tracking-widest text-center text-center">Has pagado antes del día 30 por 5 meses consecutivos</p>
+                    <div className="space-y-3 text-left text-left">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase italic tracking-widest ml-1 mb-2 text-left text-left text-left">Recompensas Desbloqueadas</h4>
+                        {[ { title: 'Descuento 5%', desc: 'Aplicable en tu próximo condominio.', icon: 'trophy', iconColor: 'text-amber-500' }, { title: 'Reserva Prioritaria', desc: 'Canjea tus puntos por acceso a canchas.', icon: 'star', iconColor: 'text-blue-500' } ].map((item, i) => (
+                            <div key={i} className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center gap-4 text-left text-left">
+                                <div className="bg-white p-3 rounded-2xl shadow-sm text-center flex items-center justify-center"><Icon name={item.icon} size={18} className={item.iconColor}/></div>
+                                <div className="text-left text-left"><p className="font-black text-xs text-slate-800 italic uppercase leading-none mb-1 text-left text-left text-left">{item.title}</p><p className="text-[10px] text-slate-400 font-medium italic text-left text-left text-left">{item.desc}</p></div>
                             </div>
                         ))}
                     </div>
                 </div>
             );
 
-            const AdminMetrics = () => (
-                <div className="flex flex-col h-full bg-slate-50 pb-24 overflow-y-auto no-scrollbar">
-                    <div className="bg-slate-900 p-6 text-white rounded-b-[2.5rem] shadow-xl shrink-0">
-                        <h2 className="text-xl font-black tracking-widest uppercase italic">Reporte Financiero</h2>
-                    </div>
-                    <div className="p-6 space-y-6">
-                        <section className="bg-white p-5 rounded-[2rem] shadow-sm border">
-                            <h3 className="text-slate-800 font-black text-[10px] uppercase mb-4 italic">Flujo de Caja (Bs.)</h3>
-                            <div className="space-y-4">
-                                <div><div className="flex justify-between text-[10px] font-black mb-1"><span>INGRESOS</span><span>85%</span></div><div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 w-[85%]"></div></div></div>
-                                <div><div className="flex justify-between text-[10px] font-black mb-1"><span>EGRESOS</span><span>60%</span></div><div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-rose-500 w-[60%]"></div></div></div>
-                            </div>
-                        </section>
-                        <section className="bg-gradient-to-br from-indigo-900 to-blue-900 p-6 rounded-[2.5rem] text-white">
-                            <p className="text-[10px] font-black opacity-50 uppercase mb-1">Histórico Fondo Reserva</p>
-                            <h4 className="text-2xl font-black italic">$4.820,00</h4>
-                            <div className="flex gap-1 items-end h-12 mt-4">
-                                {[20, 30, 25, 45, 60, 80, 100].map((h, i) => <div key={i} style={{ height: `${h}%` }} className="flex-1 bg-white/20 rounded-t-sm"></div>)}
-                            </div>
-                        </section>
-                    </div>
-                </div>
-            );
-
-            const AdminDetail = () => (
-                <div className="flex flex-col h-full bg-white overflow-y-auto no-scrollbar">
-                    <div className="p-6 border-b flex justify-between items-center bg-slate-50 sticky top-0">
-                        <button onClick={() => setStep('dashboard')} className="text-slate-500 font-black text-[10px] uppercase tracking-widest italic">Cerrar</button>
-                        <span className="text-slate-900 font-black text-xs italic uppercase tracking-[2px]">Detalle de Pago</span>
-                        <div className="w-10"></div>
-                    </div>
-                    <div className="p-8 pb-10">
-                        <div className="flex justify-between items-center mb-8">
-                            <div><h2 className="text-3xl font-black text-slate-900 tracking-tighter italic">{selectedPayment?.unit}</h2><p className="text-blue-600 text-xs font-black uppercase">{selectedPayment?.name}</p></div>
-                            <div className="bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-2xl text-[10px] font-black tracking-widest italic uppercase">Match 100%</div>
+            const ChatView = () => (
+                <div className="h-full bg-slate-50 flex flex-col overflow-hidden text-left text-left text-left text-left">
+                    <div className="p-6 border-b bg-white flex flex-col pt-12 shadow-sm text-left text-left">
+                        <div className="flex justify-between items-center mb-4 text-left text-left">
+                            <button onClick={() => navigateTo('settings')} className="text-slate-400 uppercase font-black text-[10px] italic tracking-widest text-left text-left text-left text-left">← Perfil</button>
+                            <h2 className="font-black text-xs uppercase italic tracking-[2px] text-center text-center">Comunidad Digital</h2>
+                            <div className="w-10 text-right text-right text-right"></div>
                         </div>
-                        
-                        <div className="space-y-4">
-                            <div className="bg-slate-900 rounded-[2rem] p-6 text-white shadow-xl">
-                                <p className="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">Reporte Vecino (IA)</p>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between border-b border-white/5 pb-2"><span className="text-slate-500 text-xs font-bold uppercase">Referencia</span><span className="font-black text-xs text-blue-400 italic">{selectedPayment?.ref}</span></div>
-                                    <div className="flex justify-between"><span className="text-slate-500 text-xs font-bold uppercase">Monto</span><span className="font-black text-xs italic">{selectedPayment?.amount}</span></div>
-                                </div>
+                        <div className="flex gap-2 text-left text-left">
+                            <button className="flex-1 py-2.5 bg-blue-900 text-white rounded-xl font-black text-[9px] uppercase italic tracking-widest shadow-lg shadow-blue-100 text-center text-center">Foros</button>
+                            <button className="flex-1 py-2.5 bg-slate-100 text-slate-400 rounded-xl font-black text-[9px] uppercase italic tracking-widest text-center text-center">Privados</button>
+                        </div>
+                    </div>
+                    <div className="flex-1 overflow-y-auto no-scrollbar p-5 space-y-3 text-left text-left">
+                        <div className="bg-white p-5 rounded-[2.5rem] border border-slate-100 flex items-center justify-between shadow-sm active:bg-blue-50 transition-all cursor-pointer text-left text-left">
+                            <div className="flex items-center gap-4 text-left text-left">
+                                <div className="bg-indigo-50 p-3 rounded-2xl text-indigo-600 text-center flex items-center justify-center"><Icon name="hash" size={20}/></div>
+                                <div className="text-left text-left text-left"><p className="font-black text-slate-800 text-xs italic uppercase tracking-tighter leading-none mb-1 text-left text-left text-left">Acuerdos de Fachada</p><p className="text-slate-400 text-[9px] font-bold text-left text-left italic">78 Vecinos debatiendo</p></div>
                             </div>
-                            
-                            <div className="flex justify-center -my-3 relative z-10"><div className="bg-emerald-500 p-2 rounded-full border-4 border-white text-white"><Icon name="arrow-right-left" size={16} /></div></div>
+                            <div className="bg-blue-600 w-5 h-5 rounded-full flex items-center justify-center text-white font-black text-[8px] text-center text-center text-center">12</div>
+                        </div>
+                        <div className="bg-white p-5 rounded-[2.5rem] border border-slate-100 flex items-center justify-between shadow-sm active:bg-blue-50 transition-all cursor-pointer text-left text-left">
+                            <div className="flex items-center gap-4 text-left text-left">
+                                <div className="bg-slate-900 p-3 rounded-2xl text-white text-center flex items-center justify-center"><Icon name="shield-check" size={20}/></div>
+                                <div className="text-left text-left text-left"><p className="font-black text-slate-800 text-xs italic uppercase tracking-tighter leading-none mb-1 text-left text-left text-left text-left text-left">Admin Central</p><p className="text-emerald-500 text-[8px] font-black uppercase text-left text-left italic tracking-widest text-left">En línea</p></div>
+                            </div>
+                            <Icon name="message-square" size={18} className="text-slate-200" />
+                        </div>
+                        <div className="pt-4 text-left text-left"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic mb-3 ml-2 text-left text-left text-left">Residentes Activos</p></div>
+                        {['Juan Pérez (PH-A)', 'Maria Silva (12-B)', 'Carlos Rivas (PH-B)'].map((name, i) => (
+                            <div key={i} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-2xl text-left text-left active:scale-[0.98] transition-all cursor-pointer text-left">
+                                <div className="flex items-center gap-3 text-left text-left text-left text-left text-left text-left"><div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black italic text-center text-center text-center text-center text-center">{name[0]}</div><span className="text-[10px] font-black italic text-slate-700 text-left text-left text-left text-left text-left">{name}</span></div>
+                                <button className="p-2 text-blue-600 text-center"><Icon name="send" size={14}/></button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
 
-                            <div className="bg-emerald-50 rounded-[2rem] p-6 border-2 border-emerald-100 shadow-inner">
-                                <p className="text-[10px] font-black text-emerald-600 uppercase mb-4 tracking-widest italic">Validación Banco (API)</p>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between border-b border-emerald-200/40 pb-2"><span className="text-emerald-900/60 text-xs font-bold uppercase">Ref. Bancaria</span><span className="font-black text-xs text-emerald-900">{selectedPayment?.ref}</span></div>
-                                    <div className="flex justify-between border-b border-emerald-200/40 pb-2"><span className="text-emerald-900/60 text-xs font-bold uppercase">Monto Recibido</span><span className="font-black text-xs text-emerald-900">{selectedPayment?.amount}</span></div>
-                                    <div className="flex justify-between"><span className="text-emerald-900/60 text-xs font-bold uppercase">Banco</span><span className="font-black text-xs text-emerald-900 italic">BANESCO</span></div>
+            const NoticeDetail = () => (
+                <div className="h-full bg-white flex flex-col text-left text-left overflow-y-auto pb-10 no-scrollbar text-left text-left">
+                    <div className="p-6 border-b bg-slate-50 flex items-center gap-4 pt-12 shadow-sm text-left text-left text-left text-left"><button onClick={() => navigateTo('dashboard')} className="text-slate-500 font-black text-[10px] uppercase italic text-left text-left">Cerrar</button><h2 className="font-black text-xs uppercase italic tracking-[2px] text-left text-left">Detalle de Aviso</h2></div>
+                    <div className="p-8 space-y-6 text-left text-left text-left text-left">
+                        <div className="bg-blue-600 text-white p-5 rounded-[2rem] w-fit mb-2 shadow-xl shadow-blue-100 text-center flex items-center justify-center text-center">
+                        <Icon name={selectedNotice?.icon} size={24} />
+                        </div>
+                        <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tighter uppercase italic text-left leading-none text-left text-left text-left text-left">{selectedNotice?.title}</h3>
+                        <div className="bg-slate-50 p-6 rounded-[2.5rem] border border-slate-100 text-left text-left text-left mb-6 text-left text-left text-left">
+                            <p className="text-slate-700 text-sm italic font-medium leading-relaxed text-left text-left text-left text-left">{selectedNotice?.desc}</p>
+                        </div>
+                        <div className="space-y-4 text-left text-left text-left">
+                            <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between text-left text-left text-left">
+                                <div className="text-left text-left text-left text-left text-left"><p className="text-[8px] font-black text-slate-400 uppercase italic mb-1 text-left text-left text-left text-left">Responsable o Proveedor</p><p className="text-[11px] font-black text-slate-800 text-left text-left italic text-left text-left text-left">{selectedNotice?.responsible}</p></div>
+                                <Icon name="users" size={16} className="text-slate-300" />
+                            </div>
+                            <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between text-left text-left text-left text-left text-left">
+                                <div className="text-left text-left text-left text-left text-left text-left text-left"><p className="text-[8px] font-black text-slate-400 uppercase italic mb-1 text-left text-left text-left text-left text-left">Condominio Encargado</p><p className="text-[11px] font-black text-slate-800 text-left text-left italic text-left text-left text-left text-left text-left">{selectedNotice?.condo}</p></div>
+                                <Icon name="building-2" size={16} className="text-slate-300" />
+                            </div>
+                            <div className="bg-slate-50 p-5 rounded-[2rem] border border-slate-100 flex items-center justify-between text-left text-left text-left text-left text-left text-left text-left text-left text-left">
+                                <div className="text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left"><p className="text-[8px] font-black text-slate-400 uppercase italic mb-1 text-left text-left text-left text-left text-left text-left text-left text-left text-left">Reporte de Mantenimiento</p><p className="text-[11px] font-black text-slate-800 text-left text-left italic text-left text-left text-left text-left text-left text-left text-left">{selectedNotice?.report}</p></div>
+                                <Icon name="file-text" size={16} className="text-slate-300" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 text-left text-left text-left text-left">
+                                <div className="bg-slate-950 p-5 rounded-[2rem] text-white text-left shadow-lg text-left text-left text-left text-left text-left text-left text-left">
+                                    <p className="text-[8px] font-black text-slate-500 uppercase italic mb-1 text-left text-left text-left text-left text-left text-left text-left text-left">Estatus</p>
+                                    <p className="text-xs font-black italic uppercase tracking-widest text-blue-400 text-left text-left text-left text-left text-left text-left text-left text-left text-left">{selectedNotice?.status}</p>
+                                </div>
+                                <div className="bg-emerald-500 p-5 rounded-[2rem] text-white text-left shadow-lg shadow-emerald-500/20 text-left text-left text-left text-left text-left text-left text-left text-left">
+                                    <p className="text-[8px] font-black text-emerald-100 uppercase italic mb-1 text-left text-left text-left text-left text-left text-left text-left text-left text-left">Costo Estimado</p>
+                                    <p className="text-sm font-black italic text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left">{selectedNotice?.cost || 'N/A'}</p>
                                 </div>
                             </div>
                         </div>
-                        <button onClick={() => setStep('dashboard')} className="w-full bg-emerald-600 text-white py-5 rounded-[2rem] font-black text-sm shadow-xl mt-8 uppercase tracking-[2px] italic">Confirmar Conciliación</button>
                     </div>
                 </div>
             );
 
-            const SettingsScreen = () => (
-                <div className="h-full bg-white flex flex-col pb-20 overflow-y-auto no-scrollbar">
-                    <div className="p-6 flex justify-between items-center border-b sticky top-0 bg-white/90 backdrop-blur-md z-10">
-                        <button onClick={() => setStep('dashboard')} className="text-slate-500 font-black text-xs italic uppercase tracking-widest">Cerrar</button>
-                        <h2 className="font-black text-[11px] uppercase tracking-[3px] italic ml-4">Ajustes</h2>
-                        <button onClick={() => { setIsLoggedIn(false); setStep('auth_welcome'); }} className="bg-rose-50 text-rose-500 px-3 py-1.5 rounded-xl font-black text-[10px] uppercase">Salir</button>
-                    </div>
-                    <div className="p-6 space-y-6">
-                        <section className="space-y-4">
-                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[2px] italic">Perfil</h3>
-                            <div className="p-5 bg-slate-50 rounded-[1.5rem] border"><p className="text-[9px] text-slate-400 font-black uppercase mb-1">Nombre</p><p className="font-black text-slate-900 text-sm">Deivis Montenegro</p></div>
-                        </section>
-                        {role === 'inquilino' && (
-                            <section className="space-y-4">
-                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[2px] italic">Métodos de Pago</h3>
-                                <div className="bg-slate-900 text-white p-6 rounded-[2rem] shadow-xl">
-                                    <div className="flex justify-between mb-4"><Icon name="wallet" className="opacity-50"/><span className="text-[10px] font-black opacity-30 uppercase tracking-widest">Pago Móvil</span></div>
-                                    <p className="text-xl font-black tracking-[2px] italic">0414-2223344</p>
-                                    <div className="flex gap-4 mt-4 opacity-60 text-[10px] font-black"><span>V-12.345.678</span><span>BANESCO</span></div>
-                                </div>
-                            </section>
-                        )}
-                    </div>
+            const ReportPayment = () => (
+                <div className="p-8 h-full bg-white flex flex-col pt-16 text-left animate-in slide-in-from-right">
+                <button onClick={() => navigateTo('dashboard')} className="text-blue-600 font-black mb-8 italic text-xs uppercase self-start text-left">← Volver</button>
+                <h2 className="text-2xl font-black text-slate-900 mb-1 tracking-tighter italic uppercase text-left leading-tight text-left">Escanear Recibo</h2>
+                <div onClick={() => { navigateTo('scanning'); setTimeout(() => {
+                    const newPay = { id: `PAY-${Math.floor(1000+Math.random()*9000)}`, unit: '4-B', amount: 'Bs. 2.450,00', date: 'Hoy', ref: '99021288', bank: 'Transferencia', status: 'Validado', category: 'Condominio' };
+                    setHistory([newPay, ...history]);
+                    navigateTo('success');
+                }, 3000); }} className="flex-1 border-4 border-dashed border-slate-100 rounded-[3.5rem] bg-slate-50 flex flex-col items-center justify-center mt-10 hover:bg-blue-50 transition-all cursor-pointer text-center mx-auto w-full">
+                    <div className="bg-blue-900 text-white p-7 rounded-full mb-5 shadow-2xl shadow-blue-100 text-center flex items-center justify-center"><Icon name="camera" size={40} /></div>
+                    <p className="font-black text-blue-900 text-sm uppercase italic tracking-widest text-center">Escanear Comprobante</p>
+                </div>
                 </div>
             );
 
-            // MAIN RENDERER
+            const ScanningView = () => (
+                <div className="h-full flex flex-col items-center justify-center p-8 bg-blue-950 text-white text-center">
+                <div className="relative w-56 h-72 border-4 border-blue-400/40 rounded-[2.5rem] overflow-hidden mb-12 shadow-2xl bg-white/5 mx-auto">
+                    <div className="absolute top-0 left-0 w-full h-1.5 bg-cyan-400 shadow-[0_0_25px_#22d3ee] animate-scan text-center"></div>
+                    <div className="absolute inset-0 bg-blue-900/10 flex items-center justify-center backdrop-blur-[2px] text-center">
+                    <div className="w-14 h-14 border-[5px] border-cyan-400 border-t-transparent rounded-full animate-spin text-center"></div>
+                    </div>
+                </div>
+                <h2 className="text-xl font-black mb-3 italic tracking-[4px] uppercase text-center text-white">Procesando IA</h2>
+                <p className="text-slate-400 text-[10px] font-bold uppercase italic tracking-tighter text-center">Validando firma bancaria y montos...</p>
+                </div>
+            );
+
+            // --- RENDER PRINCIPAL ---
             return (
-                <div className="min-h-screen flex items-center justify-center p-4">
-                    <div className="w-[375px] h-[780px] bg-slate-900 rounded-[3.5rem] shadow-[0_50px_100px_-12px_rgba(0,0,0,0.5)] border-[10px] border-slate-900 relative overflow-hidden ring-4 ring-slate-800/30">
-                        {/* Isla Dinámica */}
-                        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-7 bg-black rounded-full z-[100]"></div>
-                        
-                        <div className="h-full w-full bg-white relative overflow-hidden">
-                            {!isLoggedIn ? (
-                                <>
-                                    {step === 'auth_welcome' && <AuthWelcome />}
-                                    {step === 'login' && <Login />}
-                                </>
-                            ) : (
-                                <>
-                                    {step === 'dashboard' && (role === 'inquilino' ? <InquilinoDashboard /> : <AdminDashboard />)}
-                                    {step === 'metrics' && <AdminMetrics />}
-                                    {step === 'admin_detail' && <AdminDetail />}
-                                    {step === 'settings' && <SettingsScreen />}
-                                    {step === 'receipt_history' && <div className="h-full bg-slate-50 p-6"><button onClick={() => setStep('dashboard')} className="text-slate-400 font-black text-[10px] uppercase mb-8 self-start tracking-widest">← Volver</button><h2 className="font-black text-sm uppercase italic mb-6">Historial de Recibos</h2>{receipts.map(r => <div key={r.id} className="bg-white p-4 rounded-2xl mb-3 flex justify-between items-center shadow-sm border border-slate-100"><div><p className="font-black text-xs italic tracking-tight">{r.month}</p><p className="text-[10px] text-slate-400">{r.id}</p></div><Icon name="download" size={16} className="text-blue-900" /></div>)}</div>}
-                                    {step === 'report' && <div className="h-full bg-white p-8 flex flex-col"><button onClick={() => setStep('dashboard')} className="text-blue-600 font-black text-[10px] uppercase mb-12 self-start tracking-widest">← Volver</button><h2 className="text-2xl font-black text-slate-900 mb-2 italic uppercase tracking-tighter">Reportar Pago</h2><div onClick={() => { setStep('scanning'); setTimeout(() => setStep('success'), 3000); }} className="flex-1 border-2 border-dashed border-blue-100 rounded-[3rem] bg-blue-50/50 flex flex-col items-center justify-center cursor-pointer"><div className="bg-blue-900 text-white p-6 rounded-full mb-4"><Icon name="camera" size={40} strokeWidth={2.5} /></div><p className="font-black text-blue-900 text-sm uppercase tracking-tight italic text-center px-6">Adjuntar captura de pago</p></div></div>}
-                                    {step === 'scanning' && <div className="h-full bg-blue-900 flex flex-col items-center justify-center p-8 text-center text-white"><div className="w-52 h-72 border-4 border-blue-400/30 rounded-[2rem] relative overflow-hidden mb-12"><div className="absolute top-0 left-0 w-full h-1.5 bg-cyan-400 animate-scan-line shadow-[0_0_25px_#22d3ee]"></div><div className="absolute inset-0 flex items-center justify-center bg-blue-900/40"><div className="w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div></div></div><h2 className="text-xl font-black italic tracking-widest uppercase italic">Validando...</h2></div>}
-                                    {step === 'success' && <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-white"><div className="bg-emerald-100 text-emerald-600 p-8 rounded-full mb-8"><Icon name="check-circle" size={80} strokeWidth={3} /></div><h2 className="text-3xl font-black text-slate-900 mb-10 tracking-tighter italic uppercase">¡Enviado!</h2><button onClick={() => setStep('dashboard')} className="w-full bg-blue-900 text-white py-5 rounded-[2rem] font-black text-lg shadow-xl uppercase italic">Entendido</button></div>}
-                                    {step === 'notice_detail' && <div className="h-full bg-white p-8 flex flex-col"><button onClick={() => setStep('dashboard')} className="text-blue-600 font-black text-xs uppercase mb-8 self-start">← Cerrar</button><div className="bg-blue-50 p-4 rounded-[2rem] inline-block mb-6 w-fit"><Icon name={selectedNotice?.icon || 'info'} size={32} className="text-blue-600" /></div><h3 className="text-2xl font-black text-slate-900 mb-2 italic uppercase">{selectedNotice?.title}</h3><p className="text-slate-500 text-sm leading-relaxed bg-slate-50 p-6 rounded-[2rem] border">{selectedNotice?.desc}</p></div>}
-
-                                    {/* Bottom Nav */}
-                                    {(step === 'dashboard' || step === 'metrics' || step === 'receipt_history') && (
-                                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[85%] bg-white/90 backdrop-blur-xl border h-14 rounded-2xl shadow-2xl flex justify-around items-center px-4 z-50">
-                                            <button onClick={() => setStep('dashboard')} className={`flex flex-col items-center gap-0.5 ${step === 'dashboard' ? 'text-blue-900' : 'text-slate-300'}`}>
-                                                <Icon name="layout-dashboard" size={18} strokeWidth={step === 'dashboard' ? 3 : 2} />
-                                                <span className="text-[7px] font-black uppercase italic tracking-widest">Inicio</span>
-                                            </button>
-                                            <button 
-                                                onClick={() => role === 'administrador' ? setStep('metrics') : setStep('receipt_history')} 
-                                                className={`flex flex-col items-center gap-0.5 ${step === 'metrics' || step === 'receipt_history' ? 'text-blue-900' : 'text-slate-300'}`}
-                                            >
-                                                <Icon name={role === 'administrador' ? 'bar-chart-3' : 'file-text'} size={18} strokeWidth={step === 'metrics' || step === 'receipt_history' ? 3 : 2} />
-                                                <span className="text-[7px] font-black uppercase italic tracking-widest">{role === 'administrador' ? 'Métricas' : 'Docs'}</span>
-                                            </button>
-                                            <button onClick={() => setStep('settings')} className={`flex flex-col items-center gap-0.5 ${step === 'settings' ? 'text-blue-900' : 'text-slate-300'}`}>
-                                                <Icon name="user" size={18} />
-                                                <span className="text-[7px] font-black uppercase italic tracking-widest">Perfil</span>
-                                            </button>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
+                <div className="min-h-screen bg-slate-200 flex items-center justify-center p-4 font-sans antialiased overflow-hidden text-center">
+                <div className="w-[375px] h-[780px] bg-slate-950 rounded-[4.5rem] shadow-[0_60px_120px_-18px_rgba(0,0,0,0.6)] border-[12px] border-slate-950 relative overflow-hidden ring-4 ring-slate-800/30 text-center">
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-8 bg-black rounded-full z-[120] flex items-center justify-center text-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500/30 mr-12 text-center"></div>
+                    <div className="w-1 h-1 rounded-full bg-blue-500/40 text-center"></div>
                     </div>
+                    <div className="h-full w-full bg-white relative text-center">
+                    {!isLoggedIn ? (
+                        <div className="h-full text-center">{step === 'auth_welcome' ? <AuthWelcome /> : <Login />}</div>
+                    ) : (
+                        <div className="h-full relative text-center">
+                        {/* Vistas Dinámicas */}
+                        {step === 'dashboard' && <InquilinoDashboard />}
+                        {step === 'settings' && <SettingsScreen />}
+                        {step === 'my_finances' && <MyFinances />}
+                        {step === 'payments_list' && <PaymentsList />}
+                        {step === 'payment_receipt' && <PaymentReceipt />}
+                        {step === 'common_areas' && <CommonAreas />}
+                        {step === 'area_detail' && <AreaDetail />}
+                        {step === 'pay_cashea' && <PayCashea />}
+                        {step === 'surveys' && <Surveys />}
+                        {step === 'assembly_summary' && <AssemblySummary />}
+                        {step === 'tickets' && <Tickets />}
+                        {step === 'streak_view' && <StreakView />}
+                        {step === 'chat_view' && <ChatView />}
+                        {step === 'notice_detail' && <NoticeDetail />}
+                        {step === 'success' && <SuccessStep />}
+                        {step === 'report' && <ReportPayment />}
+                        {step === 'scanning' && <ScanningView />}
+
+                        {/* Barra de Navegación Persistente */}
+                        {['dashboard', 'settings', 'common_areas', 'chat_view', 'my_finances', 'payments_list', 'surveys'].includes(step) && (
+                            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[85%] bg-white/95 backdrop-blur-xl border border-slate-100 h-16 rounded-[2.5rem] shadow-2xl flex justify-around items-center px-4 z-50 animate-in slide-in-from-bottom duration-500 text-center">
+                            <button onClick={() => navigateTo('dashboard')} className={`flex flex-col items-center gap-1 ${step === 'dashboard' ? 'text-blue-900' : 'text-slate-300'} text-center`}><Icon name="layout-dashboard" size={20} /><span className="text-[7px] font-black uppercase italic text-center">Inicio</span></button>
+                            <button onClick={() => navigateTo('chat_view')} className={`flex flex-col items-center gap-1 ${step === 'chat_view' ? 'text-blue-900' : 'text-slate-300'} text-center`}><Icon name="message-square" size={20} /><span className="text-[7px] font-black uppercase italic text-center">Chat</span></button>
+                            <button onClick={() => navigateTo('settings')} className={`flex flex-col items-center gap-1 ${step === 'settings' ? 'text-blue-900' : 'text-slate-300'} text-center`}><Icon name="user" size={20} /><span className="text-[7px] font-black uppercase italic text-center">Perfil</span></button>
+                            </div>
+                        )}
+                        </div>
+                    )}
+                    </div>
+                </div>
                 </div>
             );
         };
